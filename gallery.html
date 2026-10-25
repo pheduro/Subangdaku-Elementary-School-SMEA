@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gallery · Subangdaku ES SMEA</title><link rel="stylesheet" href="assets/style.css">
+<style>.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}.gal a{display:block;border-radius:12px;overflow:hidden;background:#0001}.gal img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;transition:transform .3s}.gal a:hover img{transform:scale(1.04)}</style></head>
+<body data-page="gallery" data-root="">
+<main class="wrap" id="app"></main>
+<script src="data/smea.js"></script><script src="assets/app.js"></script>
+<script>
+var D=SMEA,U=UI,caps=["Presenting the Domain 3 Cognitive Development data","Term 1 SMEA Conference title slide, September 18, 2026","Presenter at the school podium","Presenter at the podium","Teachers during the conference","Enrollment profile presented","Conference hall and presenter","Reporting at the conference","Teachers attending the conference","Presenter at the podium"];
+document.getElementById("app").innerHTML=
+ U.hero("Term 1 SMEA Conference · September 18, 2026","Gallery","Photos from the Term 1 School Monitoring, Evaluation and Adjustment Conference.")+
+ '<section class="card"><div class="gal">'+caps.map(function(c,i){var n=("0"+(i+1)).slice(-2);return '<a href="assets/photos/conference-'+n+'.jpg" target="_blank" rel="noopener"><img loading="lazy" src="assets/photos/conference-'+n+'.jpg" alt="'+U.esc(c)+'"></a>'}).join("")+'</div></section>';
+</script></body></html>

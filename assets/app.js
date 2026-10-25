@@ -9,7 +9,8 @@
     ["nutrition","Nutrition","nutrition.html"],
     ["outcomes","Learner Outcomes","outcomes.html"],
     ["practices","BLICs & Practices","practices.html"],
-    ["slides","Slides","slides.html"]
+    ["slides","Slides","slides.html"],
+    ["gallery","Gallery","gallery.html"]
   ];
   var esc = function(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})};
   var fmt = function(n){return Number(n).toLocaleString("en-US")};

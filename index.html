@@ -13,7 +13,8 @@ var tiles=[
  ["🍎","Nutrition","Learners with poor nutrition (wasted and severely wasted).","nutrition.html","live"],
  ["🎯","Learner Outcomes","LARDOs, dropouts, and subject failures.","outcomes.html","live"],
  ["🧭","BLICs & Practices","Bottlenecks, lags, issues, concerns and promising practices.","practices.html","live"],
- ["🗂️","Slides","Term 1 SMEA conference decks by subject.","slides.html","live"]
+ ["🗂️","Slides","Term 1 SMEA conference decks by subject.","slides.html","live"],
+ ["📸","Gallery","Photos from the Term 1 SMEA Conference.","gallery.html","live"]
 ];
 document.getElementById("app").innerHTML=
  U.hero("School Year 2026–2027 · Term 1","SMEA Dashboard","One place for Subangdaku Elementary School's monitoring, evaluation and adjustment results.")+
@@ -25,5 +26,6 @@ document.getElementById("app").innerHTML=
  '</section>'+
  '<section class="grid g3">'+tiles.map(function(t){
    return '<a class="card tile" href="'+t[3]+'"><span class="ic">'+t[0]+'</span><h3>'+t[1]+'</h3><p>'+t[2]+'</p></a>';
- }).join("")+'</section>';
+ }).join("")+'</section>'+
+ '<section class="card"><h2>Term 1 SMEA Conference</h2><p class="sub">September 18, 2026</p><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px"><img src="assets/photos/conference-02.jpg" alt="Conference title slide" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px"><img src="assets/photos/conference-09.jpg" alt="Teachers attending the conference" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px"><img src="assets/photos/conference-06.jpg" alt="Enrollment profile presented" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px"></div><p><a href="gallery.html">See all photos →</a></p></section>';
 </script></body></html>
