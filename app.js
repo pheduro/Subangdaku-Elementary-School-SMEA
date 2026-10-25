@@ -12,6 +12,41 @@ const core=a=>{const s=a.toLowerCase();
  if(/mathem/.test(s))return'Mathematics';if(/^science/.test(s))return'Science';if(/^english/.test(s))return'English';if(/^filipino/.test(s))return'Filipino';
  if(/^gmrc/.test(s))return'GMRC';if(/araling/.test(s))return'Araling Panlipunan';if(/^makabansa/.test(s))return'MAKABANSA';if(/^mapeh/.test(s))return'MAPEH';if(/ict/.test(s))return'ICT';return null};
 const el=id=>document.getElementById(id);
+
+/* ---------- Motion: scroll reveal, growing bars, line drawing, count-up ---------- */
+const REDUCE=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const io=(!REDUCE&&'IntersectionObserver' in window)?new IntersectionObserver(es=>es.forEach(e=>{
+  if(!e.isIntersecting)return;const n=e.target;io.unobserve(n);n.classList.add('in');if(n._cu)n._cu()}),{threshold:.05,rootMargin:'0px 0px -6% 0px'}):null;
+function motion(root){
+  if(!io)return;
+  const q=s=>[...root.querySelectorAll(s)];
+  /* chart groups: bars, dots, lines and table rows animate when the group scrolls into view */
+  q('.rows,#stk,#ptte,#swings,.two>div,.tw').forEach(g=>{
+    if(g.dataset.m)return;g.dataset.m=1;g.classList.add('ag');
+    ['.row','.db','.swing'].forEach(s=>g.querySelectorAll(s).forEach((n,i)=>n.style.setProperty('--i',Math.min(i,14))));
+    g.querySelectorAll('tbody tr').forEach((n,i)=>{n.classList.add('rt');n.style.setProperty('--i',Math.min(i,12))});
+    io.observe(g)});
+  /* text, cards and list items fade up */
+  q('.kpi,.card,.takeaway,.find,.lede,.ph,.two h4,ul.l li').forEach(n=>{
+    if(n.dataset.r)return;n.dataset.r=1;n.classList.add('rv');
+    n.style.setProperty('--i',Math.min([...n.parentNode.children].indexOf(n),7));io.observe(n)});
+  /* numbers count up from zero */
+  q('.kpi .v,.val').forEach(n=>{
+    if(n._z!=null)return;const t=n.textContent,m=t.match(/\d+(\.\d+)?/);if(!m)return;
+    const end=parseFloat(m[0]),dec=m[1]?m[1].length-1:0;
+    const d0=n.classList.contains('val')?250+(+n.parentNode.style.getPropertyValue('--i')||0)*80:250;
+    n._z=t.replace(m[0],(0).toFixed(dec));n.textContent=n._z;
+    n._cu=()=>{const k=n._k=(n._k||0)+1,t0=performance.now()+d0;
+      const step=now=>{if(n._k!==k)return;const p=Math.min(1,Math.max(0,(now-t0)/1000)),e=1-Math.pow(1-p,3);
+        n.textContent=t.replace(m[0],(end*e).toFixed(dec));if(p<1)requestAnimationFrame(step)};
+      requestAnimationFrame(step)};
+    io.observe(n)});
+}
+/* replay a section's animations each time its tab is opened */
+function replay(sec){
+  if(!io||!sec)return;
+  sec.querySelectorAll('.in').forEach(n=>{n.classList.remove('in');if(n._z!=null){n._k=(n._k||0)+1;n.textContent=n._z}io.observe(n)});
+}
 const bar=(n,v,tag)=>`<div class="row"><div class="n">${n}${tag||''}</div><div class="trk"><div class="fill" style="width:${v}%;background:${barColor(v)}"></div><div class="tgt" style="left:${T}%"></div></div><div class="val">${f1(v)}</div></div>`;
 const legend=()=>BANDS.map(b=>`<span><i class="${b[0]}"></i>${b[1]}</span>`).join('');
 const pos=v=>((Math.max(40,Math.min(100,v))-40)/60*100).toFixed(2);
@@ -82,6 +117,7 @@ function gradeView(g){
   <div class="two"><div><h4>Grade ${g} MPS by learning area</h4><div class="tw"><table>${tbl(['Learning area',...COMP,'Overall'],list)}</table></div><div class="legend">${legend()}</div></div>
   <div><h4>Summative Tests and Term Exam by learning area</h4>${HD3}${rs.map(r=>dumb3(r.a,r.c[1],r.c[2],r.c[3],r.c[4])).join('')}<div class="legend">${LEG3('ST 1','ST 2','TE','PT (context)')}</div></div></div>
   <div class="two" style="margin-top:18px"><div><h4>Strengths</h4><ul class="l">${c.s.map(x=>`<li>${x}</li>`).join('')}</ul><h4>Concerns</h4><ul class="l">${c.c.map(x=>`<li>${x}</li>`).join('')}</ul></div><div><h4>Possible interventions</h4><ul class="l">${c.i.map(x=>`<li>${x}</li>`).join('')}</ul></div></div>`;
+  motion(el('gbody'));
 }
 el('gchips').innerHTML='';[1,2,3,4,5,6].forEach(g=>{const b=document.createElement('button');b.className='chip';b.textContent='Grade '+g;b.setAttribute('aria-pressed',g===curG);b.onclick=()=>{curG=g;[...el('gchips').children].forEach(x=>x.setAttribute('aria-pressed',x===b));gradeView(g)};el('gchips').appendChild(b)});
 gradeView(curG);
@@ -140,14 +176,16 @@ function lineChart(a){
   for(let v=50;v<=100;v+=10)s+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${v}</text>`;
   for(let g=1;g<=6;g++)s+=`<text x="${x(g)}" y="${H-8}" text-anchor="middle">Gr ${g}</text>`;
   s+=`<line x1="${L}" x2="${W-R}" y1="${y(75)}" y2="${y(75)}" stroke="var(--red)" stroke-dasharray="3 3"/>`;
+  s+='<g class="lg">';
   lines.forEach(l=>{const pts=l[1].filter(Boolean);if(!pts.length)return;s+=`<polyline fill="none" stroke="${l[2]}" stroke-width="2.4" ${l[3]?`stroke-dasharray="${l[3]}"`:''} points="${pts.map(p=>x(p[0])+','+y(p[1])).join(' ')}"/>`+pts.map(p=>`<circle cx="${x(p[0])}" cy="${y(p[1])}" r="3.6" fill="${l[2]}"><title>${l[0]} Grade ${p[0]}: ${f1(p[1])}</title></circle>`).join('')});
-  s+='</svg><div class="legend">'+lines.map(l=>`<span><i style="background:${l[2]};${l[3]?'opacity:.6':''}"></i>${l[0]}</span>`).join('')+'<span><span class="tgtkey" style="border-left-style:dashed"></span>75</span></div>';
+  s+='</g></svg><div class="legend">'+lines.map(l=>`<span><i style="background:${l[2]};${l[3]?'opacity:.6':''}"></i>${l[0]}</span>`).join('')+'<span><span class="tgtkey" style="border-left-style:dashed"></span>75</span></div>';
   return s}
 function areaView(i){
   const a=AREAS[i],rs=all.filter(a.sel).sort((p,q)=>p.g-q.g);
   el('abody').innerHTML=`<h3>${a.k}</h3><p class="lede" style="margin-top:6px">${a.lede}</p>
   <div class="two"><div><h4>${a.k} scores by grade</h4>${lineChart(a)}</div><div><h4>${a.k} MPS by grade</h4><div class="tw"><table>${tbl(['Grade · area',...COMP,'Overall'],rs.map(r=>`<tr><td class="l">G${r.g} · ${r.a}</td>`+r.c.map(cell).join('')+cell(r.o)+'</tr>').join(''))}</table></div></div></div>
-  <div class="two" style="margin-top:18px"><div><h4>What the results show</h4><ul class="l">${a.shows.map(x=>`<li>${x}</li>`).join('')}</ul></div><div><h4>Possible interventions</h4><ul class="l">${a.iv.map(x=>`<li>${x}</li>`).join('')}</ul></div></div>`}
+  <div class="two" style="margin-top:18px"><div><h4>What the results show</h4><ul class="l">${a.shows.map(x=>`<li>${x}</li>`).join('')}</ul></div><div><h4>Possible interventions</h4><ul class="l">${a.iv.map(x=>`<li>${x}</li>`).join('')}</ul></div></div>`;
+  motion(el('abody'))}
 el('achips').innerHTML='';AREAS.forEach((a,i)=>{const b=document.createElement('button');b.className='chip';b.textContent=a.k;b.setAttribute('aria-pressed',i===0);b.onclick=()=>{[...el('achips').children].forEach(x=>x.setAttribute('aria-pressed',x===b));areaView(i)};el('achips').appendChild(b)});
 areaView(0);
 
@@ -163,7 +201,7 @@ const F=[
 ];
 el('finds').innerHTML=F.map((f,i)=>`<div class="find"><div class="n">${i+1}</div><div><h3>${f[0]}</h3><p>${f[1]}</p></div></div>`).join('');
 const sw=[];all.forEach(r=>{if(r.c[2]!=null&&r.c[3]!=null&&Math.abs(r.c[3]-r.c[2])>=15)sw.push({l:`G${r.g} ${r.a}`,d:r.c[3]-r.c[2],a:r.c[2],b:r.c[3]})});sw.sort((p,q)=>q.d-p.d);
-el('swings').innerHTML=sw.map(s=>{const w=Math.min(50,Math.abs(s.d)/40*50);return`<div class="swing"><div>${s.l}</div><div class="tr" title="ST 1 ${f1(s.a)} to ST 2 ${f1(s.b)}"><div class="sb" style="${s.d>=0?`left:50%;background:var(--leaf)`:`right:50%;background:var(--red)`};width:${w}%"></div></div><div class="val" style="font-size:13px">${s.d>0?'+':'−'}${Math.abs(s.d).toFixed(1)}</div></div>`}).join('');
+el('swings').innerHTML=sw.map(s=>{const w=Math.min(50,Math.abs(s.d)/40*50);return`<div class="swing"><div>${s.l}</div><div class="tr" title="ST 1 ${f1(s.a)} to ST 2 ${f1(s.b)}"><div class="sb" style="${s.d>=0?`left:50%;background:var(--leaf)`:`right:50%;background:var(--red)`};transform-origin:${s.d>=0?'left':'right'};width:${w}%"></div></div><div class="val" style="font-size:13px">${s.d>0?'+':'−'}${Math.abs(s.d).toFixed(1)}</div></div>`}).join('');
 
 /* ---------- Plan ---------- */
 const PH=[
@@ -207,9 +245,11 @@ el('notes').innerHTML=[
 const csv='Grade,Learning area,WW,PT,ST 1,ST 2,TE,Overall\n'+all.map(r=>[r.g,'"'+r.a+'"',...r.c.map(v=>v==null?'':v),r.o].join(',')).join('\n');
 el('copy').onclick=async()=>{try{await navigator.clipboard.writeText(csv);el('copied').textContent='Copied to clipboard.'}catch(e){el('csvbox').innerHTML='<textarea class="csv" id="ta" readonly></textarea>';const t=el('ta');t.value=csv;t.focus();t.select();el('copied').textContent='Select all and copy.'}};
 
+motion(document);
+
 /* ---------- Navigation ---------- */
 const SEC=[['overview','Overview'],['grades','By grade level'],['areas','By learning area'],['findings','Key findings'],['plan','Interventions and action plan'],['data','Data and notes']];
 SEC.forEach(s=>{const b=document.createElement('button');b.className='nt';b.id='t-'+s[0];b.textContent=s[1];b.setAttribute('role','tab');b.onclick=()=>show(s[0],true);el('nav').appendChild(b)});
-function show(k,push){if(!SEC.some(s=>s[0]===k))k='overview';SEC.forEach(s=>{el('s-'+s[0]).hidden=s[0]!==k;el('t-'+s[0]).setAttribute('aria-selected',s[0]===k)});if(push){try{location.hash=k}catch(e){}}}
+function show(k,push){if(!SEC.some(s=>s[0]===k))k='overview';SEC.forEach(s=>{el('s-'+s[0]).hidden=s[0]!==k;el('t-'+s[0]).setAttribute('aria-selected',s[0]===k)});replay(el('s-'+k));if(push){try{location.hash=k}catch(e){}}}
 addEventListener('hashchange',()=>show((location.hash||'').replace('#',''),false));
 show((location.hash||'').replace('#',''),false);
