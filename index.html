@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Subangdaku ES Term 1 Dashboard</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Public+Sans:wght@400;500;600&display=swap">
+<link rel="icon" href="assets/logo.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <img class="fac" src="assets/facade.jpg" alt="Front view of Subangdaku Elementary School buildings">
+    <div class="hero-in">
+      <div class="plate"><img src="assets/logo.png" alt="Subangdaku Elementary School seal"></div>
+      <div class="hero-t">
+        <div class="eyebrow">South District · Mandaue City</div>
+        <h1>Subangdaku Elementary School</h1>
+        <p>SAPM results · Term 1 Mean Percentage Scores with analysis, interventions and action plan</p>
+      </div>
+    </div>
+  </header>
+  <nav class="top" aria-label="Sections"><div class="navrow" id="nav" role="tablist"></div></nav>
+  <p class="meta">School Year 2026-2027 · Data as of October 25, 2026 · MPS consolidation · South District · Subangdaku ES</p>
+
+  <section class="p" id="s-overview" hidden>
+    <div class="kpis" id="kpis"></div>
+    <div class="grid">
+      <div class="card c6"><h2>Overall MPS by grade level</h2><p class="sub">Average of all learning areas in the grade. Line marks 75.</p><div class="rows" id="gbars"></div><div class="takeaway" id="gtake"></div></div>
+      <div class="card c6"><h2>Where results fall</h2><p class="sub">Number of learning areas in each overall MPS range, by grade.</p><div id="stk"></div><div class="legend" id="bleg"></div><div class="takeaway" id="stktake"></div></div>
+      <div class="card c12"><h2>Performance Tasks vs Term Exam</h2><p class="sub">Each row is a grade. The blue dot is the Performance Task average, the red dot is the Term Exam average, and the number is the gap in points.</p><div id="ptte"></div><div class="legend"><span><i class="o" style="background:var(--ptc)"></i>Performance Task</span><span><i class="o" style="background:var(--tec)"></i>Term Exam</span><span><span class="tgtkey" style="border-left-style:dashed"></span>75</span></div><div class="takeaway" id="ptte-take"></div></div>
+      <div class="card c7"><h2>Every result, tasks against tests</h2><p class="sub">Each dot is one learning area in one grade. Dots below the diagonal line scored lower on the Term Exam than on Performance Tasks.</p><div id="scatter"></div><div class="legend"><span><i class="o" style="background:var(--tec)"></i>Grade 3</span><span><i class="o" style="background:var(--ptc)"></i>Other grades</span></div></div>
+      <div class="card c5"><h2>School average by component</h2><p class="sub">Written Work, Performance Task, two Summative Tests and Term Exam.</p><div class="rows" id="cbars"></div><div class="legend"><span><span class="tgtkey"></span>75</span></div><div class="takeaway" id="ctake"></div></div>
+      <div class="card c12"><h2>Average of each component by grade level</h2><p class="sub">Overall is the average of the five components.</p><div class="tw"><table id="comp"></table></div><div class="legend" id="leg"></div></div>
+    </div>
+  </section>
+
+  <section class="p" id="s-grades" hidden>
+    <div class="card" style="margin-top:12px"><h2>Analysis by grade level</h2><p class="sub">Select a grade for its learning areas, where tasks and tests part ways, and possible interventions.</p>
+      <div class="chips" id="gchips"></div><div id="gbody"></div></div>
+  </section>
+
+  <section class="p" id="s-areas" hidden>
+    <div class="card" style="margin-top:12px"><h2>Analysis by learning area</h2><p class="sub">Overall MPS of each learning area in each grade level. A dash means the area is not listed for that grade.</p>
+      <div class="tw"><table id="xg"></table></div><div class="legend" id="leg2"></div></div>
+    <div class="card" style="margin-top:14px"><div class="chips" id="achips"></div><div id="abody"></div></div>
+  </section>
+
+  <section class="p" id="s-findings" hidden>
+    <div class="card" style="margin-top:12px"><h2>Key findings</h2><p class="sub">The patterns that matter most, in order.</p><div id="finds"></div></div>
+    <div class="card" style="margin-top:14px"><h2>Largest moves between the two Summative Tests</h2><p class="sub">Change from ST 1 to ST 2 for results that moved 15 points or more. Bars to the right went up, bars to the left went down.</p><div id="swings"></div><div class="takeaway">Swings of this size in either direction point to test difficulty, coverage or recording, so item analysis and a check of the ST 1 records come first.</div></div>
+  </section>
+
+  <section class="p" id="s-plan" hidden>
+    <div class="card" style="margin-top:12px"><h2>Interventions and action plan</h2><p class="sub">Every step uses what the school already has: LAC sessions, ARAL time, class records and the teachers themselves. Grade-level and subject-specific interventions are in the earlier sections; this plan puts them in order.</p><div id="plan"></div></div>
+    <div class="card" style="margin-top:14px"><h2>Proposed targets for the next assessment cycle</h2><p class="sub">Proposals for the School Head and teachers to confirm or change.</p><div class="tw"><table id="targets"></table></div></div>
+  </section>
+
+  <section class="p" id="s-data" hidden>
+    <div class="card" style="margin-top:12px"><h2>All results (52 rows)</h2><p class="sub">Mean Percentage Scores for every grade level and learning area, as listed in the files.</p>
+      <button class="btn" id="copy" type="button">Copy as CSV</button> <span class="src" id="copied" style="font-size:13px;color:var(--muted)"></span>
+      <div class="tw" style="margin-top:10px"><table id="all"></table></div><div id="csvbox"></div></div>
+    <div class="card" style="margin-top:14px"><h2>Reading these results</h2><ul class="l" id="notes"></ul></div>
+    <div class="card" style="margin-top:14px"><h2>Source files</h2><p style="margin:0">Six MPS consolidation spreadsheets (Grades 1 to 6), exported 25 Oct 2026 from the Subangdaku ES records folder in Google Drive. Who can open the folder depends on its Drive sharing settings.</p></div>
+  </section>
+  <footer>WW = Written Work · PT = Performance Task · ST 1 and ST 2 = Summative Tests · TE = Term Exam. Grade and school averages are simple means of the learning-area rows in the files, not weighted by learners.</footer>
+</div>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
