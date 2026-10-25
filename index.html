@@ -2,30 +2,43 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Subangdaku ES SMEA</title><link rel="stylesheet" href="assets/style.css"></head>
 <body data-page="home" data-root="">
+<div id="banner"></div>
 <main class="wrap" id="app"></main>
 <script src="data/smea.js"></script><script src="assets/app.js"></script>
 <script>
 var D=SMEA, U=UI, lpnTot=D.lpn.rows.reduce(function(a,r){return a+r[2]+r[3]},0);
 var tiles=[
- ["📊","Term 1 SAPM","Mean percentage scores by grade, subject and term component.","sapm/index.html","live"],
- ["🧒","Enrollment","Learners per grade level, Kinder to Grade 6 and SPED.","enrollment.html","live"],
- ["📖","Literacy","CRLA reading profile; PHIL-IRI when reported.","literacy.html","live"],
- ["🍎","Nutrition","Learners with poor nutrition (wasted and severely wasted).","nutrition.html","live"],
- ["🎯","Learner Outcomes","LARDOs, dropouts, and subject failures.","outcomes.html","live"],
- ["🧭","BLICs & Practices","Bottlenecks, lags, issues, concerns and promising practices.","practices.html","live"],
- ["🗂️","Slides","Term 1 SMEA conference decks by subject.","slides.html","live"],
- ["📸","Gallery","Photos from the Term 1 SMEA Conference.","gallery.html","live"]
+ ["chart","Term 1 SAPM","Mean percentage scores by grade, subject and term component.","sapm/index.html"],
+ ["users","Enrollment","Learners per grade level, Kinder to Grade 6 and SPED.","enrollment.html"],
+ ["book","Literacy","CRLA reading profile; PHIL-IRI when reported.","literacy.html"],
+ ["heart","Nutrition","Learners with poor nutrition (wasted and severely wasted).","nutrition.html"],
+ ["target","Learner Outcomes","LARDOs, dropouts, and subject failures.","outcomes.html"],
+ ["compass","BLICs & Practices","Bottlenecks, lags, issues, concerns and promising practices.","practices.html"],
+ ["slides","Slides","Term 1 SMEA conference decks by subject.","slides.html"],
+ ["image","Gallery","Photos from the Term 1 SMEA Conference.","gallery.html"]
 ];
+document.getElementById("banner").innerHTML=
+ '<section class="banner" style="margin:0"><div class="wrap"><img class="crest" src="assets/logo.png" alt="Subangdaku Elementary School seal">'+
+ '<div><span class="pill">'+U.icon("cal")+'School Year 2026–2027 · Term 1</span></div>'+
+ '<h1>Results that guide <em>what we do next</em></h1>'+
+ '<p class="lead">'+U.esc(D.school)+' monitors learner results every term, then adjusts its plans. This is where those results live.</p>'+
+ '<div class="cta"><a class="btn pri" href="sapm/index.html">Open Term 1 SAPM dashboard '+U.icon("arrow")+'</a><a class="btn sec" href="gallery.html">'+U.icon("image")+' View photos</a></div></div></section>';
 document.getElementById("app").innerHTML=
- U.hero("School Year 2026–2027 · Term 1","SMEA Dashboard","One place for Subangdaku Elementary School's monitoring, evaluation and adjustment results.")+
- '<section class="grid g4">'+
-  U.stat(U.fmt(D.enrollment.total),"learners enrolled (incl. SPED)","accent")+
-  U.stat(U.fmt(lpnTot),"learners with poor nutrition, "+U.pct(lpnTot,D.lpn.enrolment)+" of Kinder to Grade 6")+
-  U.stat(D.blics.length,"BLICs reported")+
-  U.stat(D.practices.length,"promising practices reported")+
+ '<section class="grid g4 pull">'+
+  U.stat(U.fmt(D.enrollment.total),"learners enrolled (incl. SPED)","accent","users")+
+  U.stat(U.fmt(lpnTot),"learners with poor nutrition, "+U.pct(lpnTot,D.lpn.enrolment)+" of Kinder to Grade 6","","heart")+
+  U.stat(D.blics.length,"BLICs reported","","compass")+
+  U.stat(D.practices.length,"promising practices reported","","bulb")+
  '</section>'+
- '<section class="grid g3">'+tiles.map(function(t){
-   return '<a class="card tile" href="'+t[3]+'"><span class="ic">'+t[0]+'</span><h3>'+t[1]+'</h3><p>'+t[2]+'</p></a>';
+ '<div class="sec-h"><div><h2>Explore the modules</h2><p>Every section of the school\'s Term 1 SMEA in one place.</p></div></div>'+
+ '<section class="grid g3" style="margin-top:0">'+tiles.map(function(t){
+   return '<a class="card tile" href="'+t[3]+'"><span class="ic">'+U.icon(t[0])+'</span><span class="go">'+U.icon("arrow")+'</span><h3>'+t[1]+'</h3><p>'+t[2]+'</p></a>';
  }).join("")+'</section>'+
- '<section class="card"><h2>Term 1 SMEA Conference</h2><p class="sub">September 18, 2026</p><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px"><img src="assets/photos/conference-02.jpg" alt="Conference title slide" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px"><img src="assets/photos/conference-09.jpg" alt="Teachers attending the conference" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px"><img src="assets/photos/conference-06.jpg" alt="Enrollment profile presented" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px"></div><p><a href="gallery.html">See all photos →</a></p></section>';
+ '<div class="sec-h"><div><h2>Learners by grade level</h2><p>Enrollment, '+U.esc(D.term)+'</p></div><a class="btn" style="color:var(--emerald-d);padding:6px 0" href="enrollment.html">Full breakdown '+U.icon("arrow")+'</a></div>'+
+ '<section class="card" style="margin-top:0">'+U.bars(D.enrollment.levels)+'</section>'+
+ '<div class="sec-h"><div><h2>Term 1 SMEA Conference</h2><p>September 18, 2026 · teachers and school staff reviewing the results together</p></div><a class="btn" style="color:var(--emerald-d);padding:6px 0" href="gallery.html">All photos '+U.icon("arrow")+'</a></div>'+
+ '<section class="band" style="margin-top:0">'+
+  [["02","Conference opening slide"],["09","Teachers at the conference"],["06","Enrollment profile presented"],["03","Presenter at the podium"],["10","Reporting to the faculty"]].map(function(p){
+    return '<a href="assets/photos/conference-'+p[0]+'.jpg"><img loading="lazy" src="assets/photos/conference-'+p[0]+'.jpg" alt="'+p[1]+'"><span class="cap">'+p[1]+'</span></a>';
+  }).join("")+'</section>';
 </script></body></html>
