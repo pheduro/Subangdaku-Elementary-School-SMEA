@@ -19,7 +19,7 @@ var tiles=[
 ];
 document.getElementById("banner").innerHTML=
  '<section class="banner" style="margin:0"><div class="wrap"><img class="crest" src="assets/logo.png" alt="Subangdaku Elementary School seal">'+
- '<div><span class="pill">'+U.icon("cal")+'School Year 2026–2027 · Term 1</span></div>'+
+ '<div><span class="pill">'+U.icon("compass")+'School Monitoring, Evaluation and Adjustment</span></div>'+
  '<h1>Results that guide <em>what we do next</em></h1>'+
  '<p class="lead">'+U.esc(D.school)+' monitors learner results every term, then adjusts its plans. This is where those results live.</p>'+
  '<div class="cta"><a class="btn pri" href="sapm/index.html">Open Term 1 SAPM dashboard '+U.icon("arrow")+'</a><a class="btn sec" href="gallery.html">'+U.icon("image")+' View photos</a></div></div></section>';
@@ -34,7 +34,7 @@ document.getElementById("app").innerHTML=
   '<div class="pf wide"><span class="pi">'+U.icon("pin")+'</span><div><small>Address</small><b>'+U.esc(D.address)+'</b></div></div>'+
   '<div class="pf"><span class="pi">'+U.icon("compass")+'</span><div><small>District</small><b>'+U.esc(D.districtName)+' – '+U.esc(D.level)+'</b></div></div>'+
   '<div class="pf"><span class="pi">'+U.icon("users")+'</span><div><small>Division</small><b>'+U.esc(D.division)+'</b></div></div></section>'+
- '<div class="sec-h"><div><h2>Explore the modules</h2><p>Every section of the school\'s Term 1 SMEA in one place.</p></div></div>'+
+ '<div class="sec-h"><div><h2>Explore the modules</h2><p>Every section of the school\'s SMEA in one place.</p></div></div>'+
  '<section class="grid g3" style="margin-top:0">'+tiles.map(function(t){
    return '<a class="card tile" href="'+t[3]+'"><span class="ic">'+U.icon(t[0])+'</span><span class="go">'+U.icon("arrow")+'</span><h3>'+t[1]+'</h3><p>'+t[2]+'</p></a>';
  }).join("")+'</section>'+
