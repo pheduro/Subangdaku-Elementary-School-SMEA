@@ -51,14 +51,14 @@
         return v? '<span style="width:'+(v/t*100)+'%;background:'+colors[i]+'" title="'+v+'"></span>':"";
       }).join("")+'</div>';
     },
-    hero:function(pill,title,sub,ic){
-      return '<div class="hero" style="--img:url('+abs("assets/facade.jpg")+')">'+icon(ic||pageIcon[page]||"chart","ico")+'<span class="pill">'+icon("cal")+esc(pill)+'</span><h1>'+esc(title)+'</h1><p>'+esc(sub)+'</p></div>';
+    hero:function(pill,title,sub,ic,photo,pos){
+      return '<div class="hero'+(photo?' photo':'')+'" style="--img:url('+abs(photo||"assets/facade.jpg")+');'+(pos?'--pos:'+pos:'')+'">'+icon(ic||pageIcon[page]||"chart","ico")+'<span class="pill">'+icon("cal")+esc(pill)+'</span><h1>'+esc(title)+'</h1><p>'+esc(sub)+'</p></div>';
     }
   };
 
   // shell
   var header = '<header class="top"><div class="wrap"><a class="brand" href="'+root+'index.html"><span class="mark"><img src="'+root+'assets/logo.png" alt="" width="42" height="42"></span><span><b>'+esc(D.school)+'</b><small>School Monitoring, Evaluation and Adjustment · '+esc(D.sy)+'</small></span></a><nav aria-label="Main">'+
-    NAV.map(function(n){return '<a href="'+root+n[2]+'"'+(n[0]===page?' class="on" aria-current="page"':'')+'>'+icon(n[3])+'<span>'+n[1]+'</span></a>'}).join("")+'</nav></div></header>';
+    NAV.filter(function(n){return n[0]!=="home"}).map(function(n){return '<a href="'+root+n[2]+'"'+(n[0]===page?' class="on" aria-current="page"':'')+'>'+icon(n[3])+'<span>'+n[1]+'</span></a>'}).join("")+'</nav>'+(page==="home"?'':'<a class="homebtn" href="'+root+'index.html">'+icon("home")+'<span>Home</span></a>')+'</div></header>';
   var footer = '<footer class="site"><div class="wrap"><div class="fl"><img src="'+root+'assets/logo.png" alt=""><div><b>'+esc(D.school)+'</b>'+esc(D.district)+' · '+esc(D.sy)+', '+esc(D.term)+'<br>Figures come from the school SMEA workbooks.</div></div><div><a href="'+root+'sapm/index.html">Term 1 SAPM</a><a href="'+root+'slides.html">Slides</a><a href="'+root+'gallery.html">Gallery</a></div></div></footer>';
   document.body.insertAdjacentHTML("afterbegin", header);
   document.body.insertAdjacentHTML("beforeend", footer);

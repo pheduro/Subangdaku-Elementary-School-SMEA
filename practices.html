@@ -16,7 +16,7 @@ var prac=D.practices.map(function(p){
   kv([["Policy / program",p.policy],["School recommendation",p.school],["RFTAT-CT response",p.rftat],["Status",p.status]])+'</div>';
 }).join("");
 document.getElementById("app").innerHTML=
- U.hero("RFTA · "+D.term,"BLICs and promising practices","Bottlenecks, lags, issues and concerns reported this term, and practices worth validating or replicating.")+
+ U.hero("RFTA · "+D.term,"BLICs and promising practices","Bottlenecks, lags, issues and concerns reported this term, and practices worth validating or replicating.","compass","assets/photos/conference-10.jpg","center 30%")+
  '<section class="grid g2"><div class="card"><h2>Crucial BLICs ('+D.blics.length+')</h2><p class="sub">By priority</p>'+blics+'</div>'+
  '<div class="card"><h2>Promising practices ('+D.practices.length+')</h2><p class="sub">For validation, enhancement or replication</p>'+prac+'</div></section>';
 </script></body></html>
