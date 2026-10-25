@@ -3,20 +3,20 @@
 img{max-width:100%}
 /* Layout: facade banner with logo plate, sticky section tabs, then KPI strip, charts and written analysis per section */
 :root{
-  --navy:#0b4d34; --gold:#d6b90a; --red:#d92b1f; --leaf:#3b7a1c; --amber:#d99a1b;
-  --bg:#f2f7f4; --card:#ffffff; --fg:#12281d; --muted:#566b5f; --line:#dbe7e0; --track:#e6efe9;
-  --accent:#0b4d34; --accent-fg:#ffffff; --ptc:#0b2a7b; --tec:#d92b1f; --s1c:#6cc5b5; --s2c:#0f7f70; --note:#fff8dc;
+  --navy:#5c1424; --gold:#d6b90a; --red:#d92b1f; --leaf:#3b7a1c; --amber:#d99a1b;
+  --bg:#faf5f4; --card:#ffffff; --fg:#2a1216; --muted:#6e5a5d; --line:#ecdcdc; --track:#f1e4e4;
+  --accent:#5c1424; --accent-fg:#ffffff; --ptc:#0b2a7b; --tec:#d92b1f; --s1c:#6cc5b5; --s2c:#0f7f70; --note:#fff8dc;
   --b1:#1f6b3a; --b1t:#fff; --b2:#a9d08a; --b2t:#1b3010; --b4:#f4de8a; --b4t:#3d3200; --b5:#f1a35e; --b5t:#3a1c00; --b6:#d9534b; --b6t:#fff;
   --font-d:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif; --font-b:'Public Sans','Segoe UI',system-ui,sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0a1812; --card:#102319; --fg:#e6f3ec; --muted:#9fbbab; --line:#21402f; --track:#1b3527;
-  --accent:#e6c931; --accent-fg:#0e2218; --ptc:#7ea2ff; --tec:#ff7a6e; --s1c:#8fd3c8; --s2c:#2fb8a3; --note:#2a2a14; --leaf:#5fae3a; --amber:#e0a93a;
+  --bg:#1a0d10; --card:#25141a; --fg:#f6e9ea; --muted:#c4a3a8; --line:#46262d; --track:#35202a;
+  --accent:#e6c931; --accent-fg:#2a0a12; --ptc:#7ea2ff; --tec:#ff7a6e; --s1c:#8fd3c8; --s2c:#2fb8a3; --note:#2a2a14; --leaf:#5fae3a; --amber:#e0a93a;
   --b1:#2e8a50; --b2:#55803f; --b2t:#f1fbe9; --b4:#8a7a22; --b4t:#fff7cf; --b5:#a2622a; --b5t:#fff0e0; --b6:#b0403a;
   color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#0a1812; --card:#102319; --fg:#e6f3ec; --muted:#9fbbab; --line:#21402f; --track:#1b3527;
-  --accent:#e6c931; --accent-fg:#0e2218; --ptc:#7ea2ff; --tec:#ff7a6e; --s1c:#8fd3c8; --s2c:#2fb8a3; --note:#2a2a14; --leaf:#5fae3a; --amber:#e0a93a;
+  --bg:#1a0d10; --card:#25141a; --fg:#f6e9ea; --muted:#c4a3a8; --line:#46262d; --track:#35202a;
+  --accent:#e6c931; --accent-fg:#2a0a12; --ptc:#7ea2ff; --tec:#ff7a6e; --s1c:#8fd3c8; --s2c:#2fb8a3; --note:#2a2a14; --leaf:#5fae3a; --amber:#e0a93a;
   --b1:#2e8a50; --b2:#55803f; --b2t:#f1fbe9; --b4:#8a7a22; --b4t:#fff7cf; --b5:#a2622a; --b5t:#fff0e0; --b6:#b0403a;
   color-scheme:dark}
 *{box-sizing:border-box}
@@ -25,16 +25,16 @@ body{background:var(--bg);color:var(--fg);font-family:var(--font-b);font-size:15
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:30}
 .wrap{max-width:1180px;margin:0 auto}
 h1,h2,h3,h4{font-family:var(--font-d);margin:0;text-wrap:balance;line-height:1.18}
-.hero{position:relative;margin-top:16px;border-radius:14px;overflow:hidden;background:#0b4d34}
+.hero{position:relative;margin-top:16px;border-radius:14px;overflow:hidden;background:#5c1424}
 .hero img.fac{display:block;width:100%;height:clamp(200px,32vw,320px);object-fit:cover;object-position:center 40%}
-.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,40,28,.05) 30%,rgba(6,40,28,.9) 100%)}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(40,8,16,.05) 30%,rgba(40,8,16,.9) 100%)}
 .hero-in{position:absolute;z-index:2;left:0;right:0;bottom:0;display:flex;gap:16px;align-items:flex-end;padding:18px 20px;color:#fff}
 .plate{flex:none;width:clamp(72px,11vw,110px);aspect-ratio:1;border-radius:50%;background:#fff;padding:3px;box-shadow:0 4px 18px rgba(0,0,0,.35)}
 .plate img{width:100%;height:100%;display:block}
 .hero-t{min-width:0}
 .eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#f1de6a;font-weight:600}
 .hero h1{font-size:clamp(24px,4.4vw,40px);font-weight:700;color:#fff}
-.hero p{margin:4px 0 0;color:#d6efe3;font-size:14px}
+.hero p{margin:4px 0 0;color:#f3dde0;font-size:14px}
 nav.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);padding:10px 0 8px;margin-top:8px;border-bottom:1px solid var(--line)}
 .navrow{display:flex;gap:6px;overflow-x:auto;scrollbar-width:thin}
 .nt{flex:none;font:inherit;font-weight:600;font-size:14px;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:999px;padding:7px 15px;cursor:pointer;white-space:nowrap}
