@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Slides · Subangdaku ES SMEA</title><link rel="stylesheet" href="assets/style.css"></head>
+<body data-page="slides" data-root="">
+<main class="wrap" id="app"></main>
+<script src="data/smea.js"></script><script src="assets/app.js"></script>
+<script>
+var D=SMEA,U=UI;
+document.getElementById("app").innerHTML=
+ U.hero("Conference decks · "+D.term,"SMEA slides","Term 1 presentations by subject and program.")+
+ '<section class="card files"><p class="sub">Links open in Google Drive. Viewers need access to the shared Drive folder.</p>'+
+ D.slides.map(function(s){return '<a href="'+s[1]+'" target="_blank" rel="noopener"><span>'+U.esc(s[0])+'</span><small>'+U.esc(s[2])+'</small></a>'}).join("")+'</section>';
+</script></body></html>

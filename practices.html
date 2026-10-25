@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BLICs & Practices · Subangdaku ES SMEA</title><link rel="stylesheet" href="assets/style.css"></head>
+<body data-page="practices" data-root="">
+<main class="wrap" id="app"></main>
+<script src="data/smea.js"></script><script src="assets/app.js"></script>
+<script>
+var D=SMEA,U=UI,e=U.esc;
+function kv(pairs){return '<div class="kv">'+pairs.filter(function(p){return p[1]}).map(function(p){return '<span>'+p[0]+'</span><b>'+e(p[1])+'</b>'}).join("")+'</div>'}
+var blics=D.blics.map(function(b){
+ return '<div class="item"><h4><span class="prio '+b.priority+'">'+b.priority+'</span> '+e(b.grade)+'</h4><p style="margin:0 0 8px">'+e(b.issue)+'</p>'+
+  kv([["Policy / program",b.policy],["School response",b.school],["RFTAT-CT response",b.rftat],["Status",b.status]])+'</div>';
+}).join("");
+var prac=D.practices.map(function(p){
+ return '<div class="item"><h4>'+e(p.title)+'</h4><p style="margin:0 0 8px"><span class="tag">'+e(p.area)+'</span> <span class="tag">'+e(p.grade)+'</span></p>'+
+  kv([["Policy / program",p.policy],["School recommendation",p.school],["RFTAT-CT response",p.rftat],["Status",p.status]])+'</div>';
+}).join("");
+document.getElementById("app").innerHTML=
+ U.hero("RFTA · "+D.term,"BLICs and promising practices","Bottlenecks, lags, issues and concerns reported this term, and practices worth validating or replicating.")+
+ '<section class="grid g2"><div class="card"><h2>Crucial BLICs ('+D.blics.length+')</h2><p class="sub">By priority</p>'+blics+'</div>'+
+ '<div class="card"><h2>Promising practices ('+D.practices.length+')</h2><p class="sub">For validation, enhancement or replication</p>'+prac+'</div></section>';
+</script></body></html>

@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Enrollment · Subangdaku ES SMEA</title><link rel="stylesheet" href="assets/style.css"></head>
+<body data-page="enrollment" data-root="">
+<main class="wrap" id="app"></main>
+<script src="data/smea.js"></script><script src="assets/app.js"></script>
+<script>
+var D=SMEA,U=UI,E=D.enrollment,biggest=E.levels.slice().sort(function(a,b){return b[1]-a[1]})[0];
+document.getElementById("app").innerHTML=
+ U.hero("Enrollment · "+D.sy,"Learners per grade level","Enrollment as reported for "+D.term+".")+
+ '<section class="grid g4">'+U.stat(U.fmt(E.total),"total learners","accent")+U.stat(U.fmt(E.withoutSped),"Kinder to Grade 6")+U.stat(E.levels[7][1],"SPED learners")+U.stat(biggest[0],"largest level ("+biggest[1]+")")+'</section>'+
+ '<section class="card"><h2>Enrollment by level</h2><p class="sub">Number of learners</p>'+U.bars(E.levels)+'</section>';
+</script></body></html>

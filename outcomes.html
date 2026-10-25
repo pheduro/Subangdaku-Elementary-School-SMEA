@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Learner Outcomes · Subangdaku ES SMEA</title><link rel="stylesheet" href="assets/style.css"></head>
+<body data-page="outcomes" data-root="">
+<main class="wrap" id="app"></main>
+<script src="data/smea.js"></script><script src="assets/app.js"></script>
+<script>
+var D=SMEA,U=UI,O=D.outcomes;
+document.getElementById("app").innerHTML=
+ U.hero("Learner outcomes · "+D.term,"LARDOs, dropouts and failures","Learners at risk of dropping out, learners who dropped out, and subject failures.")+
+ '<section class="grid g3">'+U.stat(O.lardos,"LARDOs reported","accent")+U.stat(O.dropouts,"dropouts reported","accent")+U.stat(O.failures,"subject failures reported","accent")+'</section>'+
+ '<section class="card"><h2>Reporting status</h2><p class="sub">Kinder to Grade 6, all subjects</p><p style="margin:0">'+U.esc(O.note)+'</p></section>';
+</script></body></html>

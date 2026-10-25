@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Literacy · Subangdaku ES SMEA</title><link rel="stylesheet" href="assets/style.css"></head>
+<body data-page="literacy" data-root="">
+<main class="wrap" id="app"></main>
+<script src="data/smea.js"></script><script src="assets/app.js"></script>
+<script>
+var D=SMEA,U=UI,C=D.crla,colors=["#c0392b","#e67e22","#e0b400","#2a9d8f","#1b6ca8"];
+var legend='<div class="legend">'+C.categories.map(function(c,i){return '<span><i style="background:'+colors[i]+'"></i>'+c+'</span>'}).join("")+'</div>';
+var rows=C.rows.map(function(r){
+  var nums=C.categories.map(function(c,i){return c+': <b>'+r.t1[i]+'</b> ('+U.pct(r.t1[i],r.enrolment)+')'}).join("");
+  var nums2='<div class="nums">'+C.categories.map(function(c,i){return '<span>'+c+': <b>'+r.t1[i]+'</b> ('+U.pct(r.t1[i],r.enrolment)+')</span>'}).join("")+'</div>';
+  return '<div class="crla-row"><h4>'+U.esc(r.name)+' <span class="tag">'+r.enrolment+' learners assessed</span></h4>'+U.stack(r.t1,colors)+nums2+'</div>';
+}).join("");
+document.getElementById("app").innerHTML=
+ U.hero("Literacy · "+D.term,"Reading profile","Comprehensive Rapid Literacy Assessment results by learning area and grade.")+
+ '<section class="card"><h2>CRLA, Term 1</h2><p class="sub">Share of learners at each reading level</p>'+rows+legend+
+ '<div class="note"><b>Still to be reported:</b><ul>'+C.pending.map(function(p){return '<li>'+U.esc(p)+'</li>'}).join("")+'</ul></div></section>'+
+ '<section class="card"><h2>PHIL-IRI</h2><p class="sub">English and Filipino</p><p class="empty">No Subangdaku results have been entered in the PHIL-IRI workbook yet. This section fills in once the school rows are completed.</p></section>';
+</script></body></html>
