@@ -15,6 +15,7 @@
     image:"M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM9 10a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM21 15l-5-5L5 21",
     bulb:"M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z",
     arrow:"M5 12h14M13 5l7 7-7 7",
+    pin:"M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z",
     cal:"M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM16 2v4M8 2v4M3 10h18"
   };
   var icon = function(n,extra){return '<svg class="i '+(extra||"")+'" viewBox="0 0 24 24" aria-hidden="true"><path d="'+(P[n]||P.chart)+'"/></svg>'};
@@ -59,7 +60,7 @@
   // shell
   var header = '<header class="top"><div class="wrap"><a class="brand" href="'+root+'index.html"><span class="mark"><img src="'+root+'assets/logo.png" alt="" width="42" height="42"></span><span><b>'+esc(D.school)+'</b><small>School Monitoring, Evaluation and Adjustment · '+esc(D.sy)+'</small></span></a><nav aria-label="Main">'+
     NAV.filter(function(n){return n[0]!=="home"}).map(function(n){return '<a href="'+root+n[2]+'"'+(n[0]===page?' class="on" aria-current="page"':'')+'>'+icon(n[3])+'<span>'+n[1]+'</span></a>'}).join("")+'</nav>'+(page==="home"?'':'<a class="homebtn" href="'+root+'index.html">'+icon("home")+'<span>Home</span></a>')+'</div></header>';
-  var footer = '<footer class="site"><div class="wrap"><div class="fl"><img src="'+root+'assets/logo.png" alt=""><div><b>'+esc(D.school)+'</b>'+esc(D.district)+' · '+esc(D.sy)+', '+esc(D.term)+'<br>Figures come from the school SMEA workbooks.</div></div><div><a href="'+root+'sapm/index.html">Term 1 SAPM</a><a href="'+root+'slides.html">Slides</a><a href="'+root+'gallery.html">Gallery</a></div></div></footer>';
+  var footer = '<footer class="site"><div class="wrap"><div class="fl"><img src="'+root+'assets/logo.png" alt=""><div><b>'+esc(D.school)+'</b>'+esc(D.address)+'<br>School ID '+esc(D.schoolId)+' · '+esc(D.districtName)+', '+esc(D.division)+' · '+esc(D.sy)+', '+esc(D.term)+'<br>Figures come from the school SMEA workbooks.</div></div><div><a href="'+root+'sapm/index.html">Term 1 SAPM</a><a href="'+root+'slides.html">Slides</a><a href="'+root+'gallery.html">Gallery</a></div></div></footer>';
   document.body.insertAdjacentHTML("afterbegin", header);
   document.body.insertAdjacentHTML("beforeend", footer);
   var ic = document.createElement("link"); ic.rel="icon"; ic.href=root+"assets/logo.png"; document.head.appendChild(ic);

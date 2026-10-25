@@ -30,6 +30,10 @@ document.getElementById("app").innerHTML=
   U.stat(D.blics.length,"BLICs reported","","compass")+
   U.stat(D.practices.length,"promising practices reported","","bulb")+
  '</section>'+
+ '<section class="card profile" style="margin-top:0"><div class="pf"><span class="pi">'+U.icon("home")+'</span><div><small>School ID</small><b>'+U.esc(D.schoolId)+'</b></div></div>'+
+  '<div class="pf wide"><span class="pi">'+U.icon("pin")+'</span><div><small>Address</small><b>'+U.esc(D.address)+'</b></div></div>'+
+  '<div class="pf"><span class="pi">'+U.icon("compass")+'</span><div><small>District</small><b>'+U.esc(D.districtName)+' – '+U.esc(D.level)+'</b></div></div>'+
+  '<div class="pf"><span class="pi">'+U.icon("users")+'</span><div><small>Division</small><b>'+U.esc(D.division)+'</b></div></div></section>'+
  '<div class="sec-h"><div><h2>Explore the modules</h2><p>Every section of the school\'s Term 1 SMEA in one place.</p></div></div>'+
  '<section class="grid g3" style="margin-top:0">'+tiles.map(function(t){
    return '<a class="card tile" href="'+t[3]+'"><span class="ic">'+U.icon(t[0])+'</span><span class="go">'+U.icon("arrow")+'</span><h3>'+t[1]+'</h3><p>'+t[2]+'</p></a>';

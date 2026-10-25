@@ -5,6 +5,11 @@
 window.SMEA = {
   school: "Subangdaku Elementary School",
   district: "South District, Mandaue City Division",
+  schoolId: "120006",
+  address: "Lopez Jaena St., Subangdaku, Mandaue City",
+  level: "Elementary",
+  districtName: "South District",
+  division: "Division of Mandaue City",
   sy: "SY 2026–2027",
   term: "Term 1",
 
