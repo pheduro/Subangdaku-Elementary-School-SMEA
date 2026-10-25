@@ -4,7 +4,7 @@ img{max-width:100%}
 /* Layout: facade banner with logo plate, sticky section tabs, then KPI strip, charts and written analysis per section */
 :root{
   --navy:#7d1530; --gold:#d6b90a; --red:#d92b1f; --leaf:#3b7a1c; --amber:#d99a1b;
-  --bg:#faf5f4; --card:#ffffff; --fg:#2a1216; --muted:#6e5a5d; --line:#ecdcdc; --track:#f1e4e4;
+  --bg:#fbf7f1; --card:#ffffff; --fg:#2a1216; --muted:#6e5a5d; --line:#ecdcdc; --track:#f1e4e4;
   --accent:#7d1530; --accent-fg:#ffffff; --ptc:#0b2a7b; --tec:#d92b1f; --s1c:#6cc5b5; --s2c:#0f7f70; --note:#fff8dc;
   --b1:#1f6b3a; --b1t:#fff; --b2:#a9d08a; --b2t:#1b3010; --b4:#f4de8a; --b4t:#3d3200; --b5:#f1a35e; --b5t:#3a1c00; --b6:#d9534b; --b6t:#fff;
   --font-d:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif; --font-b:'Public Sans','Segoe UI',system-ui,sans-serif;
@@ -170,3 +170,9 @@ footer{margin-top:20px;font-size:12.5px;color:var(--muted)}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
 }
+
+/* complementary accents on the dashboard chrome */
+.kpi{border-top:4px solid #7d1530}
+.kpi:nth-child(2){border-top-color:#1f7a7a}.kpi:nth-child(3){border-top-color:#e08a1e}.kpi:nth-child(4){border-top-color:#2f7d4a}
+.hero::after{background:linear-gradient(180deg,rgba(60,10,22,.05) 30%,rgba(60,10,22,.9) 100%)}
+.hero{border-bottom:4px solid #f2b632}

@@ -7,12 +7,12 @@
 <script>
 var D=SMEA,U=UI,L=D.lpn,w=0,sw=0;
 L.rows.forEach(function(r){w+=r[2];sw+=r[3]});
-var tot=w+sw, top=L.rows.slice().sort(function(a,b){return (b[2]+b[3])/b[1]-(a[2]+a[3])/a[1]})[0];
+var tot=w+sw, topRow=L.rows.slice().sort(function(a,b){return (b[2]+b[3])/b[1]-(a[2]+a[3])/a[1]})[0];
 var body=L.rows.map(function(r){var t=r[2]+r[3];return '<tr><td>'+r[0]+'</td><td class="num">'+r[1]+'</td><td class="num">'+r[2]+'</td><td class="num">'+r[3]+'</td><td class="num"><b>'+t+'</b></td><td class="num">'+U.pct(t,r[1])+'</td></tr>'}).join("");
 document.getElementById("app").innerHTML=
  U.hero("Nutrition · "+D.term,"Learners with poor nutrition","Wasted and severely wasted learners, Kinder to Grade 6 (SPED not included in this report).")+
  '<section class="grid g4">'+U.stat(tot,"learners with poor nutrition","accent")+U.stat(w,"wasted")+U.stat(sw,"severely wasted")+U.stat(U.pct(tot,L.enrolment),"of "+U.fmt(L.enrolment)+" learners")+'</section>'+
  '<section class="grid g2"><div class="card"><h2>By grade level</h2><p class="sub">Wasted plus severely wasted</p>'+U.bars(L.rows.map(function(r){return [r[0],r[2]+r[3]]}))+'</div>'+
- '<div class="card"><h2>Details</h2><p class="sub">Highest share: '+top[0]+' ('+U.pct(top[2]+top[3],top[1])+')</p><table><thead><tr><th>Level</th><th class="num">Enrolled</th><th class="num">Wasted</th><th class="num">Severe</th><th class="num">Total</th><th class="num">%</th></tr></thead><tbody>'+body+'</tbody></table></div></section>'+
+ '<div class="card"><h2>Details</h2><p class="sub">Highest share: '+topRow[0]+' ('+U.pct(topRow[2]+topRow[3],topRow[1])+')</p><table><thead><tr><th>Level</th><th class="num">Enrolled</th><th class="num">Wasted</th><th class="num">Severe</th><th class="num">Total</th><th class="num">%</th></tr></thead><tbody>'+body+'</tbody></table></div></section>'+
  '<div class="note">Term 2 and Term 3 have not been reported yet.</div>';
 </script></body></html>
