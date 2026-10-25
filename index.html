@@ -29,15 +29,14 @@
     <div class="grid">
       <div class="card c6"><h2>Overall MPS by grade level</h2><p class="sub">Average of all learning areas in the grade. Line marks 75.</p><div class="rows" id="gbars"></div><div class="takeaway" id="gtake"></div></div>
       <div class="card c6"><h2>Where results fall</h2><p class="sub">Number of learning areas in each overall MPS range, by grade.</p><div id="stk"></div><div class="legend" id="bleg"></div><div class="takeaway" id="stktake"></div></div>
-      <div class="card c12"><h2>Performance Tasks vs Term Exam</h2><p class="sub">Each row is a grade. The blue dot is the Performance Task average, the red dot is the Term Exam average, and the number is the gap in points.</p><div id="ptte"></div><div class="legend"><span><i class="o" style="background:var(--ptc)"></i>Performance Task</span><span><i class="o" style="background:var(--tec)"></i>Term Exam</span><span><span class="tgtkey" style="border-left-style:dashed"></span>75</span></div><div class="takeaway" id="ptte-take"></div></div>
-      <div class="card c7"><h2>Every result, tasks against tests</h2><p class="sub">Each dot is one learning area in one grade. Dots below the diagonal line scored lower on the Term Exam than on Performance Tasks.</p><div id="scatter"></div><div class="legend"><span><i class="o" style="background:var(--tec)"></i>Grade 3</span><span><i class="o" style="background:var(--ptc)"></i>Other grades</span></div></div>
-      <div class="card c5"><h2>School average by component</h2><p class="sub">Written Work, Performance Task, two Summative Tests and Term Exam.</p><div class="rows" id="cbars"></div><div class="legend"><span><span class="tgtkey"></span>75</span></div><div class="takeaway" id="ctake"></div></div>
+      <div class="card c12"><h2>Summative Tests vs Term Exam</h2><p class="sub">Each row is a grade. Dots are the average of Summative Test 1, Summative Test 2 and the Term Exam. The two numbers show how far the Term Exam is below (−) or above (+) each Summative Test. ST 1 and ST 2 cover different competencies, and the Term Exam mixes both, mostly from ST 2, so ST 2 is the closer match. The open circle is the Performance Task, shown for context and not used in the numbers.</p><div id="ptte"></div><div class="legend"><span><i class="o" style="background:var(--s1c)"></i>Summative Test 1</span><span><i class="o" style="background:var(--s2c)"></i>Summative Test 2</span><span><i class="o" style="background:var(--tec)"></i>Term Exam</span><span><i class="o" style="background:var(--card);border:2px solid var(--ptc);width:8px;height:8px"></i>Performance Task (context only)</span><span><span class="tgtkey" style="border-left-style:dashed"></span>75</span></div><div class="takeaway" id="ptte-take"></div></div>
+      <div class="card c12"><h2>School average by component</h2><p class="sub">Written Work, Performance Task, two Summative Tests and Term Exam.</p><div class="rows" id="cbars"></div><div class="legend"><span><span class="tgtkey"></span>75</span></div><div class="takeaway" id="ctake"></div></div>
       <div class="card c12"><h2>Average of each component by grade level</h2><p class="sub">Overall is the average of the five components.</p><div class="tw"><table id="comp"></table></div><div class="legend" id="leg"></div></div>
     </div>
   </section>
 
   <section class="p" id="s-grades" hidden>
-    <div class="card" style="margin-top:12px"><h2>Analysis by grade level</h2><p class="sub">Select a grade for its learning areas, where tasks and tests part ways, and possible interventions.</p>
+    <div class="card" style="margin-top:12px"><h2>Analysis by grade level</h2><p class="sub">Select a grade for its learning areas, where the Summative Tests and Term Exam part ways, and possible interventions.</p>
       <div class="chips" id="gchips"></div><div id="gbody"></div></div>
   </section>
 
@@ -49,7 +48,7 @@
 
   <section class="p" id="s-findings" hidden>
     <div class="card" style="margin-top:12px"><h2>Key findings</h2><p class="sub">The patterns that matter most, in order.</p><div id="finds"></div></div>
-    <div class="card" style="margin-top:14px"><h2>Largest moves between the two Summative Tests</h2><p class="sub">Change from ST 1 to ST 2 for results that moved 15 points or more. Bars to the right went up, bars to the left went down.</p><div id="swings"></div><div class="takeaway">Swings of this size in either direction point to test difficulty, coverage or recording, so item analysis and a check of the ST 1 records come first.</div></div>
+    <div class="card" style="margin-top:14px"><h2>Largest moves between the two Summative Tests</h2><p class="sub">Change from ST 1 to ST 2 for results that moved 15 points or more. Bars to the right went up, bars to the left went down.</p><div id="swings"></div><div class="takeaway">ST 1 and ST 2 cover different competencies, so swings of this size most likely reflect which topics each test covered. Check the competencies behind each test first, then item analysis, then the records for recording errors.</div></div>
   </section>
 
   <section class="p" id="s-plan" hidden>
