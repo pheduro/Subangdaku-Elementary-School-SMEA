@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Teacher Data Entry · Subangdaku ES SMEA</title>
+<link rel="icon" href="../assets/logo.png">
+<link rel="stylesheet" href="entry.css">
+</head>
+<body>
+<nav class="sitebar"><span>Subangdaku ES SMEA <span style="color:#c49aa2;margin:0 6px">/</span> <b>Teacher Data Entry</b></span><a href="../index.html">⌂ Home</a></nav>
+<header class="top">
+  <div class="wrap">
+    <div>
+      <small>Subangdaku Elementary School · SMEA · SY 2026–2027</small>
+      <h1>MPS and Least-Learned Competencies</h1>
+    </div>
+    <div class="who hidden" id="who">
+      <span id="whoName"></span>
+      <button class="btn ghost sm" id="pinBtn" type="button">Change PIN</button>
+      <button class="btn ghost sm" id="outBtn" type="button">Sign out</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- LOGIN -->
+  <section id="login" class="card" style="max-width:520px;margin-inline:auto">
+    <h2>Teacher sign in</h2>
+    <p class="hint">Enter the Teacher ID and PIN given to you by the SMEA coordinator. You can only see and edit your own entries.</p>
+    <form id="loginForm" class="row" autocomplete="off">
+      <div><label for="lgCode">Teacher ID</label><input id="lgCode" type="text" autocapitalize="characters" autocomplete="off" placeholder="e.g. G5-03" maxlength="10" required></div>
+      <div><label for="lgPin">PIN</label><input id="lgPin" type="password" inputmode="numeric" autocomplete="off" maxlength="8" required></div>
+      <button class="btn" id="lgBtn" type="submit">Sign in</button>
+    </form>
+    <div id="lgMsg"></div>
+    <p class="hint" style="margin-top:16px">Lost your ID or PIN? Ask the SMEA coordinator. <button class="link" type="button" id="toAdmin">Coordinator access</button></p>
+  </section>
+
+  <!-- TEACHER ENTRY -->
+  <section id="entry" class="hidden">
+    <div class="card">
+      <div class="row two">
+        <div><label for="period">Reporting period</label><select id="period"></select></div>
+        <div><label>Grade level</label><div id="gradeLbl" style="padding:10px 0;font-weight:600"></div></div>
+      </div>
+      <div id="closedMsg"></div>
+    </div>
+    <div class="card" id="ecrCard">
+      <h2>Fill from your class record</h2>
+      <p class="hint">Optional. Choose the term and learning area, then pick your Electronic Class Record (.xlsx). The page reads only the class MPS figures. The file stays on your device, is not uploaded, and no learner names are read or sent.</p>
+      <div class="row two">
+        <div><label for="ecrTerm">Term sheet in the file</label><select id="ecrTerm"><option value="TERM 1">Term 1</option><option value="TERM 2">Term 2</option><option value="TERM 3">Term 3</option></select></div>
+        <div><label for="ecrArea">Learning area</label><select id="ecrArea"></select></div>
+      </div>
+      <div style="margin-top:12px"><label for="ecrFile">Class record file</label><input id="ecrFile" type="file" accept=".xlsx,.xlsm,.xls"></div>
+      <div id="ecrOut"></div>
+    </div>
+    <div class="tabs" id="tabs" role="tablist" aria-label="Learning areas"></div>
+    <div id="areaPanel"></div>
+  </section>
+
+  <!-- ADMIN -->
+  <section id="admin" class="hidden">
+    <div id="adminLogin" class="card" style="max-width:520px;margin-inline:auto">
+      <h2>Coordinator access</h2>
+      <p class="hint">For the SMEA coordinator only.</p>
+      <form id="adminForm" class="row" autocomplete="off">
+        <div><label for="adPin">Coordinator PIN</label><input id="adPin" type="password" inputmode="numeric" autocomplete="off" maxlength="8" required></div>
+        <button class="btn" type="submit">Open</button>
+      </form>
+      <div id="adMsg"></div>
+      <p class="hint" style="margin-top:16px"><button class="link" type="button" id="toTeacher">Back to teacher sign in</button></p>
+    </div>
+    <div id="adminBody" class="hidden"></div>
+  </section>
+
+  <!-- CHANGE PIN -->
+  <section id="pinCard" class="card hidden" style="max-width:520px;margin-inline:auto">
+    <h2>Change your PIN</h2>
+    <form id="pinForm" class="row" autocomplete="off">
+      <div><label for="oldPin">Current PIN</label><input id="oldPin" type="password" inputmode="numeric" maxlength="8" required></div>
+      <div><label for="newPin">New PIN (4 to 8 digits)</label><input id="newPin" type="password" inputmode="numeric" maxlength="8" required></div>
+      <div class="seg"><button class="btn" type="submit">Save new PIN</button><button class="btn ghost" type="button" id="pinCancel">Cancel</button></div>
+    </form>
+    <div id="pinMsg"></div>
+  </section>
+</main>
+
+<div class="savebar hidden" id="savebar"><div class="in">
+  <span class="status" id="status">No changes</span>
+  <button class="btn" id="saveBtn" type="button" disabled>Save my entries</button>
+</div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="entry.js"></script>
+</body>
+</html>
