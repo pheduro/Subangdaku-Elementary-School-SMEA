@@ -333,11 +333,8 @@ $("ecrFile").addEventListener("change",async(ev)=>{
   if(onlyTotal) box.append(el("div",{class:"msg warn",text:"For some rows only the total was found, not male and female. The total will be placed in both boxes so the average stays correct."}));
   if(isClosed()){ box.append(el("div",{class:"msg err",text:"This term is closed."})); out.append(box); return; }
   const sectionName=titleCase(res.meta.section||"");
-  box.append(el("button",{class:"btn",type:"button",style:"margin-top:12px",text:"Use these values for "+area+(sectionName?" · "+sectionName:""),onclick:()=>{
-    const list=areaReports(area);
-    let rep=list.find(r=>sectionName&&r.section.trim().toLowerCase()===sectionName.toLowerCase())
-         || list.find(r=>!hasData(r) && (!r.section.trim()||!sectionName))
-         || list.find(r=>!hasData(r));
+  const hasMps=(r)=>ASSESS.some(([k])=>String(r[k+"_m"]).trim()!==""||String(r[k+"_f"]).trim()!=="");
+  const applyEcr=(rep)=>{
     if(!rep){ rep=blankReport(area,sectionName); S.reports.push(rep); }
     if(sectionName) rep.section=sectionName;
     if(rep.section) remember("smea_section",rep.section);
@@ -346,7 +343,24 @@ $("ecrFile").addEventListener("change",async(ev)=>{
     S.active=area; S.sel[area]=areaReports(area).indexOf(rep); markDirty(); renderTabs(); renderArea();
     out.innerHTML=""; out.append(el("div",{class:"msg ok",text:"Values placed in "+area+(rep.section?" · Section "+rep.section:"")+". Check them, then press Save my entries."}));
     $("ecrFile").value="";
-  }}));
+  };
+  const useBtn=el("button",{class:"btn",type:"button",style:"margin-top:12px",text:"Use these values for "+area+(sectionName?" · "+sectionName:""),onclick:()=>{
+    const list=areaReports(area);
+    const rep=list.find(r=>sectionName&&r.section.trim().toLowerCase()===sectionName.toLowerCase())
+         || list.find(r=>!hasData(r) && (!r.section.trim()||!sectionName))
+         || list.find(r=>!hasData(r));
+    // never overwrite MPS already entered for this learning area and section without asking
+    if(rep && hasMps(rep)){
+      const ask=el("div",{class:"msg warn",style:"margin-top:12px"},
+        el("p",{style:"margin:0 0 8px",text:area+(rep.section?" · Section "+rep.section:"")+" already has MPS entered. Replace the male and female MPS with the values from this file? Your competencies and remarks are not changed."}),
+        el("div",{class:"seg"},
+          el("button",{class:"btn",type:"button",text:"Yes, replace",onclick:()=>applyEcr(rep)}),
+          el("button",{class:"btn soft",type:"button",text:"No, keep what I have",onclick:()=>{ ask.remove(); useBtn.classList.remove("hidden"); }})));
+      useBtn.classList.add("hidden"); box.append(ask); return;
+    }
+    applyEcr(rep);
+  }});
+  box.append(useBtn);
   out.append(box);
 });
 
