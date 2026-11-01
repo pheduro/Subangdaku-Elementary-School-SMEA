@@ -227,7 +227,7 @@ body[data-page=gallery]{--pg:rgba(224,138,30,.5)}
 footer.site{border-top:4px solid var(--gold)}
 
 /* enrollment number: calm teal instead of red (red reads as negative) */
-.stat:first-child{--sc:#e6a100;--sc2:var(--gold)}
+.stat:first-child{--sc:var(--forest-d);--sc2:var(--forest)}
 .stat:nth-child(2){--sc:var(--emerald);--sc2:var(--amber)}
 
 /* home banner: load animation (photo reveal, word-by-word headline, shimmer, crest glow) */
