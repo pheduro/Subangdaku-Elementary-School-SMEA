@@ -373,7 +373,7 @@ function readScore(cell){
   if(!cell) return {state:"empty"};
   if(cell.t==="z") return cell.f?{state:"uncalc"}:{state:"empty"};   // a formula whose result was never saved in the file
   if(cell.t==="e") return {state:"error",text:cell.w||String(cell.v)};
-  if(cell.v===undefined||cell.v===null||cell.v==="") return cell.f?{state:"uncalc"}:{state:"empty"};
+  if(cell.v===undefined||cell.v===null||cell.v==="") return {state:"empty"};   // e.g. IFERROR(...,"") on a blank template
   const n=typeof cell.v==="number"?cell.v:parseFloat(String(cell.v).replace(",","."));
   if(!isFinite(n)) return {state:"text",text:String(cell.v)};
   if(n<0||n>100) return {state:"over",value:n};
@@ -384,8 +384,8 @@ function readMeta(ws){
   const meta={grade:"",section:"",subject:"",sy:"",src:{}};
   if(!ws) return meta;
   const ref=XLSX.utils.decode_range(ws["!ref"]||"A1:A1");
-  const maxR=Math.min(ref.e.r,40), maxC=Math.min(ref.e.c,45);
-  const LABELS={grade:/^GRADE( LEVEL)?$/,section:/^SECTION$/,subject:/^(SUBJECT|LEARNING AREA)( TAUGHT)?$/,sy:/^(SCHOOL YEAR|SY)$/};
+  const maxR=Math.min(ref.e.r,14), maxC=Math.min(ref.e.c,45);   // header area only: learner names start below it
+  const LABELS={grade:/^GRADE( LEVEL)?$/,section:/^(NAME OF )?SECTION$/,subject:/^(SUBJECT|LEARNING AREA)( TAUGHT)?$/,sy:/^(SCHOOL YEAR|SY)$/};
   Object.keys(LABELS).forEach(key=>{
     scan: for(let r=0;r<=maxR;r++) for(let c=0;c<=maxC;c++){
       const x=ws[addr(r,c)]; if(!x||x.v==null) continue;
@@ -398,6 +398,7 @@ function readMeta(ws){
   const fixed={grade:"L8",section:"L9",subject:"L10",sy:"F13"};
   Object.keys(fixed).forEach(k=>{ if(meta[k]) return; const v=cellVal(ws,fixed[k]); if(v!==undefined&&String(v).trim()!==""){ meta[k]=String(v).replace(/\s+/g," ").trim(); meta.src[k]=fixed[k]; } });
   meta.grade=norm(meta.grade); meta.subject=norm(meta.subject);
+  if(/^(NAME OF SECTION|SECTION)$/.test(norm(meta.section))){ meta.section=""; meta.sectionPlaceholder=true; }   // the blank template's own placeholder
   return meta;
 }
 
@@ -413,15 +414,25 @@ function readBlocks(ws){
       if(t.includes("MEAN PERCENTAGE")&&t.includes(marker)){ lr=r; res.where[key].label=addr(r,c); break; }
     }
     if(lr<0){ res.issues.push({key,code:"no_block"}); return; }
-    // the header row says MPS (the right-most one is the total column); the numbers are in the row below it
-    let hr=-1, hc=-1;
-    for(let r=lr;r<=lr+8&&hr<0;r++) for(let c=maxC;c>=0;c--){ const x=ws[addr(r,c)]; if(x&&norm(x.v)==="MPS"){ hr=r; hc=c; break; } }
+    // the header row holds the MPS cells (male, female, total from left to right); the numbers are in the row below
+    let hr=-1, mpsCols=[];
+    for(let r=lr;r<=lr+8&&hr<0;r++){ const cols=[]; for(let c=0;c<=maxC;c++){ const x=ws[addr(r,c)]; if(x&&norm(x.v)==="MPS") cols.push(c); } if(cols.length){ hr=r; mpsCols=cols; } }
     if(hr<0){ res.issues.push({key,code:"no_header"}); return; }
-    const findCol=(re)=>{ for(const rr of [hr,hr-1]){ if(rr<0) continue; for(let c=0;c<=maxC;c++){ const x=ws[addr(rr,c)]; if(x&&re.test(norm(x.v))) return c; } } return -1; };
-    let mc=findCol(/^(MALE|MALES|BOYS?)$/), fc=findCol(/^(FEMALE|FEMALES|GIRLS?)$/);
-    if((mc<0||fc<0)&&hc===16){ mc=8; fc=12; }          // the standard template: male in I, female in M, total in Q
-    if(mc>=hc) mc=-1; if(fc>=hc) fc=-1;
-    if(mc<0||fc<0) res.issues.push({key,code:"no_sex_cols"});
+    // MALE / FEMALE / TOTAL headers (merged cells just above) say which MPS cell is which
+    const heads=[];
+    for(const rr of [hr-1,hr]){ if(rr<0) continue; for(let c=0;c<=maxC;c++){ const x=ws[addr(rr,c)]; const t=x?norm(x.v):"";
+      const role=/^(MALE|MALES|BOYS?)$/.test(t)?"m":/^(FEMALE|FEMALES|GIRLS?)$/.test(t)?"f":t==="TOTAL"?"t":""; if(role) heads.push({c,role}); } }
+    let cm=-1, cf=-1, ct=-1;
+    if(heads.length && mpsCols.length>=2) mpsCols.forEach(c=>{
+      const h=heads.filter(h=>h.c<=c&&c-h.c<=6).sort((x,y)=>y.c-x.c)[0]; if(!h) return;
+      if(h.role==="m"&&cm<0) cm=c; if(h.role==="f"&&cf<0) cf=c; if(h.role==="t"&&ct<0) ct=c; });
+    if(cm<0&&cf<0&&ct<0){
+      if(mpsCols.length>=3){ [cm,cf,ct]=mpsCols.slice(-3); }
+      else{ ct=mpsCols[mpsCols.length-1];                         // one MPS cell (older layout): male and female are named in the header row
+        cm=(heads.find(h=>h.role==="m")||{c:-1}).c; cf=(heads.find(h=>h.role==="f")||{c:-1}).c;
+        if((cm<0||cf<0)&&ct===16){ cm=8; cf=12; } }
+    }
+    if(cm<0||cf<0) res.issues.push({key,code:"no_sex_cols"});
     const vr=hr+1;
     const read=(c,who)=>{
       if(c<0) return null;
@@ -434,7 +445,7 @@ function readBlocks(ws){
       else if(n.state==="text") res.issues.push({key,code:"text",who,cell:a,text:n.text});
       return null;
     };
-    got.m=read(mc,"m"); got.f=read(fc,"f"); got.t=read(hc,"t");
+    got.m=read(cm,"m"); got.f=read(cf,"f"); got.t=read(ct,"t");
   });
   return res;
 }
@@ -538,7 +549,7 @@ async function runEcr(){
     S.active=area; S.sel[area]=areaReports(area).indexOf(rep); markDirty(); renderTabs(); renderArea();
     const parts=["Values placed in "+area+(rep.section?" · Section "+rep.section:"")+". Check them, then press Save my entries."];
     if(sectionRaw && rep.section.toLowerCase()!==sectionRaw.toLowerCase()) parts.push("The class record calls this section \""+sectionRaw+"\"; it is shown here as \""+rep.section+"\". You can change the Section box if that is not right.");
-    if(!sectionRaw) parts.push("The class record has no section name, so please type the section in the Section box before saving.");
+    if(!sectionRaw) parts.push(meta.sectionPlaceholder?"The class record's section name was never filled in (the DATA SHEET still says NAME OF SECTION), so please type the section in the Section box before saving.":"The class record has no section name, so please type the section in the Section box before saving.");
     notice(parts,"ok"); out.innerHTML=""; $("ecrFile").value="";
     if(!sectionRaw||!rep.section) try{ $("f_section").focus(); }catch(e){}
   };
