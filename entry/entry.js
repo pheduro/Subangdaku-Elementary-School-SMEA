@@ -33,7 +33,14 @@ function errText(r){
   if(r.error==="network") return "Cannot reach the server. Check your internet connection and try again.";
   if(r.error==="server") return "The server had a problem. Try again in a moment.";
   let t = ERR[r.error] || "Something went wrong.";
-  if(r.detail && r.error==="invalid_data") t += " (" + r.detail.replace(/^.*violates check constraint.*$/,"a score is outside 0 to 100") + ")";
+  if(r.error==="invalid_data"){
+    const d=String(r.detail||"");
+    if(/Section name required/i.test(d)) return "Every section needs a name of up to 40 characters. Check the Section box in each learning area.";
+    if(/Unknown learning area/i.test(d)) return "One of the learning areas is not assigned to your grade, so it cannot be saved. Please tell the SMEA coordinator.";
+    if(/Too many/i.test(d)) return "Too many sections were entered at once. Remove extra sections you do not need, then save again.";
+    if(/out of range|violates check constraint/i.test(d)) return "A score is outside 0 to 100. Fix the highlighted score, then save again.";
+    if(d) t += " (" + d + ")";
+  }
   return t;
 }
 function show(el,on){ $(el).classList.toggle("hidden",!on); }
@@ -74,11 +81,44 @@ function blankLlc(){ return {st1:[0,1,2].map(blankRow),st2:[0,1,2].map(blankRow)
 function blankRow(){ return {competency:"",intervention:"",timeline:"",status:"",_o:{}}; }
 function blankReport(area,section){ const r={area,section:section||"",remarks:"",llc:blankLlc()}; ASSESS.forEach(([k])=>{r[k+"_m"]="";r[k+"_f"]="";}); return r; }
 function hasData(r){ return ASSESS.some(([k])=>String(r[k+"_m"]).trim()!==""||String(r[k+"_f"]).trim()!=="") || String(r.remarks).trim()!=="" || LLC_SECT.some(([s])=>r.llc[s].some(x=>x.competency.trim()||x.intervention.trim()||x.timeline.trim()||x.status.trim())); }
+// ---- section names: class records write them many ways ("GR. 5 - CUCUMBER", "5-Cucumber", "Grade 5 Cucumber") ----
+const titleCase=(s)=>s.toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
+function cleanSection(s){
+  const t=String(s||"").replace(/\s+/g," ").trim();
+  const u=t.replace(/^(grade|gr\.?|g)\s*\d+\s*[-–—:.,]*\s*/i,"").replace(/^\d+\s*[-–—:.]\s*/,"").replace(/^section\s*[-–—:.]*\s*/i,"").trim();
+  return u||t;
+}
+const secKey=(s)=>cleanSection(s).toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+function lev(a,b){ const d=Array.from({length:a.length+1},(_,i)=>[i]); for(let j=1;j<=b.length;j++) d[0][j]=j;
+  for(let i=1;i<=a.length;i++) for(let j=1;j<=b.length;j++) d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1)); return d[a.length][b.length]; }
+// "same": identical once cleaned; "similar": one contains the other or only 1-2 letters differ; "different"
+function sectionRelation(a,b){
+  const x=secKey(a), y=secKey(b); if(!x||!y) return "different"; if(x===y) return "same";
+  if(Math.min(x.length,y.length)>=3 && (x.includes(y)||y.includes(x))) return "similar";
+  if(Math.min(x.length,y.length)>=4 && lev(x,y)<=2) return "similar";
+  return "different";
+}
 function remember(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
 function recall(k){ try{ return localStorage.getItem(k)||""; }catch(e){ return ""; } }
 
 // ---------------- state ----------------
-const S = {code:"",me:null,pin:null,areas:[],periods:[],cfg:{},period:null,reports:[],active:null,sel:{},llcTab:"st1",dirty:false,comps:null};
+const S = {code:"",me:null,pin:null,areas:[],periods:[],cfg:{},period:null,reports:[],active:null,sel:{},llcTab:"st1",dirty:false,comps:null,
+  loadOk:false,      // true only after this period's saved entries have been loaded from the server
+  loaded:new Set(),  // area+section keys that exist on the server, so only what the teacher removes is deleted
+  confirmSig:null};  // set while the teacher is asked to confirm a save
+const keyOf = (area,section) => area + "\u0001" + String(section||"").trim();
+
+// A message box at the top of the entry page, for things the teacher needs to understand.
+// text: a string or an array of paragraphs. kind: err | warn | ok.
+function notice(text,kind,buttons){
+  const box=$("notice"); box.innerHTML=""; if(!text) return;
+  const d=el("div",{class:"msg "+(kind||"err"),style:"margin:0 0 16px"});
+  (Array.isArray(text)?text:[text]).forEach((t,i)=>d.append(el("p",{style:"margin:"+(i?"8px":"0")+" 0 0",text:t})));
+  if(buttons&&buttons.length){ const row=el("div",{class:"seg",style:"margin:10px 0 0"}); buttons.forEach(b=>row.append(el("button",{class:"btn "+(b.soft?"soft":""),type:"button",text:b.text,onclick:b.onclick}))); d.append(row); }
+  box.append(d);
+  try{ box.scrollIntoView({behavior:"smooth",block:"center"}); }catch(e){}
+}
+function resetConfirm(){ S.confirmSig=null; $("saveBtn").textContent="Save my entries"; }
 const curPeriod = () => S.periods.find(p=>p.id===S.period);
 const isClosed = () => { const p=curPeriod(); return !!p && !p.is_open; };
 
@@ -112,11 +152,30 @@ $("period").addEventListener("change",()=>{
   if(S.dirty){ $("period").value=S.period; $("status").textContent="Save your changes before switching period."; $("status").className="status dirty"; return; }
   S.period=$("period").value; loadPeriod();
 });
+function showLoadFailed(r){
+  // Saving stays switched off until the saved entries have loaded, so nothing already saved can be replaced.
+  S.loadOk=false; S.reports=[]; S.loaded=new Set(); S.dirty=false; resetConfirm();
+  $("tabs").innerHTML=""; $("areaPanel").innerHTML=""; show("ecrCard",false); $("ecrOut").innerHTML="";
+  const why = r.error==="network" ? "The page could not reach the server."
+            : r.error==="server" ? "The server did not answer properly."
+            : errText(r);
+  const card=el("div",{class:"card"},el("h2",{text:"Your saved entries could not be loaded"}),
+    el("p",{class:"hint",text:why+" Your saved entries have not been shown, so typing and saving are switched off for now. This protects what you saved earlier: if you saved from this blank screen, it could replace it."}),
+    el("p",{class:"hint",text:"Check your internet connection, then press Try again. If it keeps failing, wait a few minutes or tell the SMEA coordinator."}),
+    el("button",{class:"btn",type:"button",text:"Try again",onclick:()=>loadPeriod()}));
+  $("areaPanel").append(card);
+  updateBar("Not loaded - saving is off");
+}
 async function loadPeriod(){
+  S.loadOk=false; S.loaded=new Set(); resetConfirm(); notice("");
+  updateBar("Loading your saved entries…");
   $("areaPanel").classList.add("spin");
   const r=await rpc("smea2_load",{p_id:S.me.id,p_pin:S.pin,p_period:S.period});
   $("areaPanel").classList.remove("spin");
-  if(!r.ok){ msg("closedMsg",errText(r)); return; }
+  if(!r.ok){ showLoadFailed(r); return; }
+  show("ecrCard",true);
+  S.loaded=new Set(r.reports.map(x=>keyOf(x.area,x.section)));
+  S.loadOk=true;
   S.reports=r.reports.map(x=>{
     const rep=blankReport(x.area,x.section); rep.remarks=x.remarks||"";
     ASSESS.forEach(([k])=>{ rep[k+"_m"]=x[k+"_m"]??""; rep[k+"_f"]=x[k+"_f"]??""; });
@@ -227,12 +286,12 @@ function renderArea(){
     }}));
   p.append(dl);
 }
-function markDirty(){ S.dirty=true; updateBar(); }
+function markDirty(){ if(S.confirmSig){ resetConfirm(); notice(""); } S.dirty=true; updateBar(); }
 function updateBar(text){
   const st=$("status");
   if(text){ st.textContent=text; st.className="status"; }
   else if(S.dirty){ st.textContent="Unsaved changes"; st.className="status dirty"; }
-  $("saveBtn").disabled = !S.dirty || isClosed();
+  $("saveBtn").disabled = !S.dirty || isClosed() || !S.loadOk;
 }
 
 // ---------------- SAPM-report CSV (Division template columns) ----------------
@@ -253,103 +312,238 @@ function sapmRows(reports,term){
 }
 
 // ---------------- save ----------------
+function focusReport(r,text){ S.active=r.area; S.sel[r.area]=areaReports(r.area).indexOf(r); renderTabs(); renderArea(); $("status").textContent=text; $("status").className="status dirty"; }
 $("saveBtn").addEventListener("click",async()=>{
+  if(!S.loadOk){ notice("Your saved entries have not loaded yet, so saving is switched off. Press Try again below, or check your internet connection.","err"); return; }
   const used=S.reports.filter(hasData);
   for(const r of used){
     const bad=ASSESS.find(([k])=>parseScore(r[k+"_m"]).bad||parseScore(r[k+"_f"]).bad);
-    if(bad){ S.active=r.area; S.sel[r.area]=areaReports(r.area).indexOf(r); renderTabs(); renderArea(); $("status").textContent="Fix the highlighted score in "+r.area+" ("+bad[1]+")."; $("status").className="status dirty"; return; }
-    if(!r.section.trim()){ S.active=r.area; S.sel[r.area]=areaReports(r.area).indexOf(r); renderTabs(); renderArea(); $("status").textContent="Enter the section name for "+r.area+"."; $("status").className="status dirty"; return; }
+    if(bad){ focusReport(r,"Fix the highlighted score in "+r.area+" ("+bad[1]+")."); notice("A score in "+r.area+" ("+bad[1]+") is not a number from 0 to 100. Fix the box marked in red, then save again. Nothing was saved.","err"); return; }
+    if(!r.section.trim()){ focusReport(r,"Enter the section name for "+r.area+"."); notice("The "+r.area+" entry has no section name. Type the section (for example Cucumber) in the Section box, then save again. Nothing was saved.","err"); return; }
   }
-  const dup=new Set(); for(const r of used){ const k=r.area+"|"+r.section.trim().toLowerCase(); if(dup.has(k)){ $("status").textContent="Two sections named "+r.section+" in "+r.area+". Give each section a different name."; $("status").className="status dirty"; return; } dup.add(k); }
-  const payload={reports:used.map(r=>({area:r.area,section:r.section.trim(),remarks:r.remarks,
+  // two entries that are the same section would be counted twice on the school board
+  for(let i=0;i<used.length;i++) for(let j=i+1;j<used.length;j++){
+    const a=used[i], b=used[j]; if(a.area!==b.area) continue;
+    if(sectionRelation(a.section,b.section)==="same"){ focusReport(b,"Two sections look the same in "+a.area+"."); notice(["In "+a.area+" you have two sections that look like the same section: \""+a.section.trim()+"\" and \""+b.section.trim()+"\".","They would be counted twice on the school's board and in the Division report. Rename one if they are different sections, or clear the values of the extra one. Nothing was saved."],"err"); return; }
+  }
+  // things the teacher should confirm first
+  const nowKeys=new Set(used.map(r=>keyOf(r.area,r.section)));
+  const removed=[...S.loaded].filter(k=>!nowKeys.has(k)).map(k=>{ const [area,section]=k.split("\u0001"); return {area,section}; });
+  const similar=[];
+  for(let i=0;i<used.length;i++) for(let j=i+1;j<used.length;j++){ if(used[i].area===used[j].area && sectionRelation(used[i].section,used[j].section)==="similar") similar.push(used[i].area+": \""+used[i].section.trim()+"\" and \""+used[j].section.trim()+"\""); }
+  const asks=[];
+  if(removed.length) asks.push("You emptied or renamed "+removed.length+" saved section"+(removed.length>1?"s":"")+": "+removed.map(x=>x.area+" · "+(x.section||"(no name)")).join("; ")+". Saving will remove "+(removed.length>1?"them":"it")+" from the school's record. If you did not mean to, do not press the button: reload the page and your saved entries will come back.");
+  if(similar.length) asks.push("These section names are very close: "+similar.join("; ")+". If they are the same section, the numbers will be counted twice. If they really are different sections, you can save.");
+  const sig=JSON.stringify([removed,similar]);
+  if(asks.length && S.confirmSig!==sig){
+    S.confirmSig=sig; $("saveBtn").textContent="Yes, save anyway";
+    notice(asks.concat(["Nothing has been saved yet. To continue, press \"Yes, save anyway\" at the bottom of the screen."]),"warn");
+    updateBar("Please read the message above");
+    return;
+  }
+  const payload={removed,reports:used.map(r=>({area:r.area,section:r.section.trim(),remarks:r.remarks,
     ...Object.fromEntries(ASSESS.flatMap(([k])=>[[k+"_m",String(r[k+"_m"]).trim().replace(",",".")],[k+"_f",String(r[k+"_f"]).trim().replace(",",".")]])),
     llc:LLC_SECT.flatMap(([s])=>r.llc[s].map((x,i)=>({assess:s,rank:i+1,competency:x.competency,intervention:x.intervention,timeline:x.timeline,status:x.status})))}))};
-  $("saveBtn").disabled=true; $("status").textContent="Saving…"; $("status").className="status";
+  $("saveBtn").disabled=true; $("status").textContent="Saving…"; $("status").className="status"; notice("");
   const res=await rpc("smea2_save",{p_id:S.me.id,p_pin:S.pin,p_period:S.period,p_payload:payload});
-  if(!res.ok){ $("status").textContent=errText(res); $("status").className="status dirty"; $("saveBtn").disabled=false; return; }
-  S.dirty=false; $("status").textContent="Saved at "+new Date().toLocaleTimeString()+" · "+res.saved+" report(s)"; $("status").className="status saved"; $("saveBtn").disabled=true;
+  if(!res.ok){
+    $("status").textContent="Not saved"; $("status").className="status dirty"; $("saveBtn").disabled=false;
+    const lead = (res.error==="network"||res.error==="server") ? "Your entries are NOT saved yet. They are still on this screen, so do not close or refresh the page. " : "Your entries were NOT saved. ";
+    notice([lead+errText(res),"Press Save my entries again once the problem is fixed."],"err");
+    return;
+  }
+  S.dirty=false; S.loaded=nowKeys; resetConfirm(); notice("");
+  $("status").textContent="Saved at "+new Date().toLocaleTimeString()+" · "+res.saved+" report(s)"; $("status").className="status saved"; $("saveBtn").disabled=true;
 });
 window.addEventListener("beforeunload",(e)=>{ if(S.dirty){ e.preventDefault(); e.returnValue=""; } });
 
 // ---------------- class record (ECR) reader: runs in the browser, nothing is uploaded ----------------
+// It finds the grade, section and subject on the DATA SHEET and the MPS blocks on the TERM sheet by their
+// labels (not fixed cell numbers), so a class record with a few inserted rows or columns can still be read.
 const ECR_BLOCKS=[["ww","WRITTEN"],["pt","PERFORMANCE TASKS"],["st1","SUMMATIVE TEST 1"],["st2","SUMMATIVE TEST 2"],["te","TERM EXAMINATION"]];
-const AREA_PATTERN={"GMRC":/GMRC|ESP|VALUES/,"Mathematics":/MATH/,"Filipino":/FILIPINO/,"English":/ENGLISH/,"Makabansa":/MAKABANSA|ARALING|\bAP\b/,"Araling Panlipunan":/ARALING|\bAP\b|MAKABANSA/,"Science":/SCIENCE/,"EPP":/EPP|TLE|LIVELIHOOD/,"Music & Arts":/MUSIC|ARTS|MAPEH/,"PE & Health":/\bPE\b|HEALTH|MAPEH/,"Reading & Literacy":/READING|LITERACY/,"Language":/LANGUAGE/};
+const AREA_PATTERN={"GMRC":/GMRC|ESP|VALUES|PAGPAPAKATAO|GOOD MANNERS/,"Mathematics":/MATH/,"Filipino":/FILIPINO/,"English":/ENGLISH/,"Makabansa":/MAKABANSA|ARALING|\bAP\b/,"Araling Panlipunan":/ARALING|\bAP\b|MAKABANSA/,"Science":/SCIENCE/,"EPP":/EPP|TLE|LIVELIHOOD/,"Music & Arts":/MUSIC|ARTS|MAPEH/,"PE & Health":/\bPE\b|HEALTH|MAPEH/,"Reading & Literacy":/READING|LITERACY/,"Language":/LANGUAGE|MOTHER TONGUE|MTB/};
 const norm=(v)=>String(v??"").replace(/\s+/g," ").trim().toUpperCase();
-const cellVal=(ws,addr)=>{ const c=ws[addr]; return c?c.v:undefined; };
-const toNum=(v)=>{ const n=typeof v==="number"?v:parseFloat(v); return (isFinite(n)&&n>=0&&n<=100)?Math.round(n*100)/100:null; };
-function readEcr(wb,sheetName){
-  const out={meta:{},mps:{},problems:[]};
-  const ds=wb.Sheets["DATA SHEET"];
-  if(ds){ out.meta={grade:norm(cellVal(ds,"L8")),section:String(cellVal(ds,"L9")??"").replace(/\s+/g," ").trim(),subject:norm(cellVal(ds,"L10")),sy:String(cellVal(ds,"F13")??"")}; }
-  const ws=wb.Sheets[sheetName];
-  if(!ws){ out.problems.push("This file has no sheet named "+sheetName+". Is it the standard Electronic Class Record?"); return out; }
-  ECR_BLOCKS.forEach(([key,marker])=>{
-    let got={m:null,f:null,t:null};
-    for(let r=150;r<=215;r++){
-      const label=norm(cellVal(ws,"B"+r));
-      if(label.includes("MEAN PERCENTAGE")&&label.includes(marker)){
-        for(let rr=r;rr<=r+8;rr++){
-          if(norm(cellVal(ws,"Q"+rr))==="MPS"){ got={m:toNum(cellVal(ws,"I"+(rr+1))),f:toNum(cellVal(ws,"M"+(rr+1))),t:toNum(cellVal(ws,"Q"+(rr+1)))}; break; }
-        }
-        break;
-      }
+const cleanName=(n)=>norm(n).replace(/[^A-Z0-9 ]/g,"");
+const cellVal=(ws,a)=>{ const c=ws[a]; return c?c.v:undefined; };
+const addr=(r,c)=>XLSX.utils.encode_cell({r,c});
+const assessName=(k)=>(ASSESS.find(a=>a[0]===k)||[k,k])[1].replace(/ MPS$/,"");
+
+// one cell -> a usable score, or the reason it is not usable
+function readScore(cell){
+  if(!cell) return {state:"empty"};
+  if(cell.t==="z") return cell.f?{state:"uncalc"}:{state:"empty"};   // a formula whose result was never saved in the file
+  if(cell.t==="e") return {state:"error",text:cell.w||String(cell.v)};
+  if(cell.v===undefined||cell.v===null||cell.v==="") return cell.f?{state:"uncalc"}:{state:"empty"};
+  const n=typeof cell.v==="number"?cell.v:parseFloat(String(cell.v).replace(",","."));
+  if(!isFinite(n)) return {state:"text",text:String(cell.v)};
+  if(n<0||n>100) return {state:"over",value:n};
+  return {state:"ok",value:Math.round(n*100)/100};
+}
+
+function readMeta(ws){
+  const meta={grade:"",section:"",subject:"",sy:"",src:{}};
+  if(!ws) return meta;
+  const ref=XLSX.utils.decode_range(ws["!ref"]||"A1:A1");
+  const maxR=Math.min(ref.e.r,40), maxC=Math.min(ref.e.c,45);
+  const LABELS={grade:/^GRADE( LEVEL)?$/,section:/^SECTION$/,subject:/^(SUBJECT|LEARNING AREA)( TAUGHT)?$/,sy:/^(SCHOOL YEAR|SY)$/};
+  Object.keys(LABELS).forEach(key=>{
+    scan: for(let r=0;r<=maxR;r++) for(let c=0;c<=maxC;c++){
+      const x=ws[addr(r,c)]; if(!x||x.v==null) continue;
+      if(!LABELS[key].test(norm(x.v).replace(/[:.]+$/,""))) continue;
+      for(let cc=c+1;cc<=Math.min(c+25,ref.e.c);cc++){ const y=ws[addr(r,cc)];
+        if(y&&y.v!==undefined&&String(y.v).trim()!==""){ meta[key]=String(y.v).replace(/\s+/g," ").trim(); meta.src[key]=addr(r,cc); break scan; } }
     }
-    out.mps[key]=got;
   });
-  return out;
+  // the standard template's own cells, used only when a label could not be found
+  const fixed={grade:"L8",section:"L9",subject:"L10",sy:"F13"};
+  Object.keys(fixed).forEach(k=>{ if(meta[k]) return; const v=cellVal(ws,fixed[k]); if(v!==undefined&&String(v).trim()!==""){ meta[k]=String(v).replace(/\s+/g," ").trim(); meta.src[k]=fixed[k]; } });
+  meta.grade=norm(meta.grade); meta.subject=norm(meta.subject);
+  return meta;
+}
+
+function readBlocks(ws){
+  const res={mps:{},where:{},issues:[],uncalc:0};
+  const ref=XLSX.utils.decode_range(ws["!ref"]||"A1:A1");
+  const maxR=Math.min(ref.e.r,700), maxC=Math.min(ref.e.c,45);
+  ECR_BLOCKS.forEach(([key,marker])=>{
+    const got={m:null,f:null,t:null}; res.mps[key]=got; res.where[key]={};
+    let lr=-1;
+    for(let r=0;r<=maxR&&lr<0;r++) for(let c=0;c<=5;c++){
+      const x=ws[addr(r,c)]; if(!x||x.v==null) continue; const t=norm(x.v);
+      if(t.includes("MEAN PERCENTAGE")&&t.includes(marker)){ lr=r; res.where[key].label=addr(r,c); break; }
+    }
+    if(lr<0){ res.issues.push({key,code:"no_block"}); return; }
+    // the header row says MPS (the right-most one is the total column); the numbers are in the row below it
+    let hr=-1, hc=-1;
+    for(let r=lr;r<=lr+8&&hr<0;r++) for(let c=maxC;c>=0;c--){ const x=ws[addr(r,c)]; if(x&&norm(x.v)==="MPS"){ hr=r; hc=c; break; } }
+    if(hr<0){ res.issues.push({key,code:"no_header"}); return; }
+    const findCol=(re)=>{ for(const rr of [hr,hr-1]){ if(rr<0) continue; for(let c=0;c<=maxC;c++){ const x=ws[addr(rr,c)]; if(x&&re.test(norm(x.v))) return c; } } return -1; };
+    let mc=findCol(/^(MALE|MALES|BOYS?)$/), fc=findCol(/^(FEMALE|FEMALES|GIRLS?)$/);
+    if((mc<0||fc<0)&&hc===16){ mc=8; fc=12; }          // the standard template: male in I, female in M, total in Q
+    if(mc>=hc) mc=-1; if(fc>=hc) fc=-1;
+    if(mc<0||fc<0) res.issues.push({key,code:"no_sex_cols"});
+    const vr=hr+1;
+    const read=(c,who)=>{
+      if(c<0) return null;
+      const a=addr(vr,c); res.where[key][who]=a;
+      const n=readScore(ws[a]);
+      if(n.state==="ok") return n.value;
+      if(n.state==="uncalc") res.uncalc++;
+      else if(n.state==="over") res.issues.push({key,code:"over",who,cell:a,value:n.value});
+      else if(n.state==="error") res.issues.push({key,code:"error",who,cell:a,text:n.text});
+      else if(n.state==="text") res.issues.push({key,code:"text",who,cell:a,text:n.text});
+      return null;
+    };
+    got.m=read(mc,"m"); got.f=read(fc,"f"); got.t=read(hc,"t");
+  });
+  return res;
+}
+
+async function openEcr(file,termNum){
+  const buf=await file.arrayBuffer();
+  const head=new Uint8Array(buf.slice(0,2));
+  const isZip=head[0]===0x50&&head[1]===0x4B, isOle=head[0]===0xD0&&head[1]===0xCF;   // .xlsx/.xlsm are zip files, .xls is an older Office file
+  if(!isZip&&!isOle) throw new Error("not a spreadsheet");
+  const first=XLSX.read(buf,{type:"array",bookSheets:true});           // sheet names only, quick
+  const names=first.SheetNames||[];
+  const dsName=names.find(n=>/^DATA ?SHEET$/.test(cleanName(n)));
+  const tName=names.find(n=>new RegExp("^TERM ?"+termNum+"$").test(cleanName(n)));
+  const pick=[dsName,tName].filter(Boolean);
+  const wb=pick.length?XLSX.read(buf,{type:"array",sheets:pick,sheetStubs:true,cellStyles:false,cellHTML:false}):null;
+  return {names,dsName,tName,wb};
 }
 function fillEcrAreas(){ const sel=$("ecrArea"); sel.innerHTML=""; S.areas.forEach(a=>sel.append(el("option",{value:a,text:a}))); sel.value=S.active||S.areas[0]; }
-const titleCase=(s)=>s.toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
-$("ecrFile").addEventListener("change",async(ev)=>{
-  const f=ev.target.files[0]; const out=$("ecrOut"); out.innerHTML="";
+
+function ecrProblem(title,lines){ const out=$("ecrOut"); out.innerHTML=""; const d=el("div",{class:"msg err"},el("b",{text:title})); (Array.isArray(lines)?lines:[lines]).forEach(t=>d.append(el("p",{style:"margin:6px 0 0",text:t}))); out.append(d); }
+
+async function runEcr(){
+  const f=$("ecrFile").files[0]; const out=$("ecrOut"); out.innerHTML="";
   if(!f) return;
-  if(typeof XLSX==="undefined"){ msg("ecrOut","The file reader could not load. Check your internet connection and refresh."); return; }
-  const term=$("ecrTerm").value, area=$("ecrArea").value;
+  if(typeof XLSX==="undefined"){ ecrProblem("The file reader could not load.","The page needs the internet for a moment to load its spreadsheet reader. Check your connection and refresh the page. You can also type your MPS by hand in the boxes below."); return; }
+  const termN=Number(($("ecrTerm").value.match(/\d+/)||[1])[0]), area=$("ecrArea").value;
   out.append(el("div",{class:"msg warn",text:"Reading the file…"}));
-  let res;
-  try{
-    const buf=await f.arrayBuffer();
-    const wb=XLSX.read(buf,{type:"array",sheets:["DATA SHEET",term],cellFormula:false,cellStyles:false,cellHTML:false});
-    res=readEcr(wb,term);
-  }catch(e){ msg("ecrOut","That file could not be read. Use the standard Electronic Class Record in .xlsx format."); return; }
-  out.innerHTML="";
-  if(res.problems.length){ msg("ecrOut",res.problems[0]); return; }
-  const warns=[];
-  const gradeNum=(res.meta.grade.match(/\d+/)||[])[0];
-  if(gradeNum && Number(gradeNum)!==S.me.grade) warns.push("The file says "+res.meta.grade+" but you are signed in as Grade "+S.me.grade+".");
+  let o;
+  try{ o=await openEcr(f,termN); }
+  catch(e){ ecrProblem("That file could not be opened.","It may not be an Excel class record, or it may be damaged or password-protected. Open it in Excel and save it again as an .xlsx file, then choose it again. Or type your MPS by hand."); return; }
+  const p=curPeriod(), pTerm=p?.term, stops=[], confirms=[], notes=[];
+
+  if(pTerm && termN!==pTerm){
+    ecrProblem("Wrong term chosen",["You are entering "+(p?p.label:"Term "+pTerm)+", but \"Term sheet in the file\" is set to Term "+termN+". The numbers would be saved under the wrong term.","Set \"Term sheet in the file\" to Term "+pTerm+" (or change the reporting period at the top of the page if you meant a different term). The file will be read again automatically."]); return; }
+  if(!o.tName){
+    const shown=o.names.slice(0,8).join(", ")+(o.names.length>8?", …":"");
+    ecrProblem("This file has no sheet for Term "+termN,["The page looks for a sheet named TERM "+termN+" (this is the sheet name in the DepEd Electronic Class Record). This file's sheets are: "+(shown||"none")+".","Check that you picked the right file, that it is the Term "+termN+" class record, and that its sheets were not renamed. Or type your MPS by hand."]); return; }
+
+  const meta=readMeta(o.dsName?o.wb.Sheets[o.dsName]:null);
+  const res=readBlocks(o.wb.Sheets[o.tName]);
+  const gradeNum=(meta.grade.match(/\d+/)||[])[0];
+  const where="Grade "+S.me.grade+" · "+area;
+
+  if(gradeNum && Number(gradeNum)!==S.me.grade) stops.push("This class record is for Grade "+gradeNum+", but you are signed in as a Grade "+S.me.grade+" teacher. Your entries are saved under your own grade, so this file cannot be used here. Check that you picked the right file. If your grade is wrong in the system, please tell the SMEA coordinator.");
+  const cannot=[];
+  if(!o.dsName) cannot.push("the file has no sheet named DATA SHEET");
+  else{ if(!gradeNum) cannot.push("its grade could not be read"); if(!meta.subject) cannot.push("its subject could not be read"); }
+  if(cannot.length) confirms.push("The page could not check that this file is for "+where+": "+cannot.join(" and ")+". Open the file in Excel and make sure it is your "+area+" class record for Grade "+S.me.grade+" before you continue.");
   const pat=AREA_PATTERN[area];
-  if(res.meta.subject && pat && !pat.test(res.meta.subject)) warns.push("The file's subject is "+res.meta.subject+" but you chose "+area+".");
-  const pTerm=curPeriod()?.term; if(pTerm && term!=="TERM "+pTerm) warns.push("You are entering Term "+pTerm+" but chose the "+term+" sheet.");
+  if(meta.subject && pat && !pat.test(meta.subject)) confirms.push("The file's subject is "+meta.subject+", but you chose "+area+". If you chose the wrong learning area, change it in the box above and the file will be read again. If this file really is your "+area+" record, tick the box below.");
+
+  res.issues.forEach(i=>{
+    const nm=assessName(i.key), who=i.who==="m"?"male":i.who==="f"?"female":"total";
+    if(i.code==="over") stops.push(nm+" ("+who+") shows "+i.value+" in cell "+i.cell+" of "+o.tName+". A mean percentage score can only be from 0 to 100, so a score or formula in the class record is probably wrong. Fix it in Excel, save the file, and choose it again.");
+    if(i.code==="no_block"||i.code==="no_header") notes.push("The "+nm+" results could not be found in "+o.tName+", so that row was left as it is. The labels or rows of the class record may have been changed. Please enter that row by hand.");
+    if(i.code==="no_sex_cols") notes.push("For "+nm+" the male and female columns could not be told apart, so only the total is used and copied into both boxes.");
+    if(i.code==="error") notes.push(nm+" ("+who+") shows an error ("+i.text+") in cell "+i.cell+". This usually means there are no learners of that sex in the section, so it was left blank.");
+    if(i.code==="text") notes.push(nm+" ("+who+") contains \""+i.text+"\" instead of a number (cell "+i.cell+"), so it was left blank.");
+  });
+
   const found=ECR_BLOCKS.filter(([k])=>res.mps[k].m!=null||res.mps[k].f!=null||res.mps[k].t!=null);
+  if(!found.length && !stops.length){
+    stops.push(res.uncalc
+      ? "The class record has formulas, but no calculated results were saved in the file. This usually happens when a class record is saved from Google Sheets, WPS Office or a phone app. Open it in Excel, wait for it to calculate, save it, and choose the file again."
+      : "No MPS values were found in "+o.tName+". Usually the scores are not entered yet, or the labels or rows of the class record were changed. Check the file, or type your MPS by hand.");
+  } else if(res.uncalc){
+    notes.push("Some cells in the class record had no calculated result and were skipped. If a row is missing below, open the file in Excel, let it calculate, save it, and choose it again.");
+  }
+
+  // ---- show what was found ----
+  out.innerHTML="";
   const box=el("div",{class:"card",style:"margin:12px 0 0;background:var(--bg)"});
-  box.append(el("h3",{text:"Found in "+term+" of this file"}),
-    el("p",{class:"hint",text:[res.meta.subject,res.meta.grade,res.meta.section?("Section "+res.meta.section):"",res.meta.sy?("SY "+res.meta.sy):""].filter(Boolean).join(" · ")}));
-  const tb=el("table",{class:"mps"}); tb.append(el("thead",{},el("tr",{},...["Assessment","Male","Female","Total"].map(x=>el("th",{text:x})))));
-  const b=el("tbody"); ASSESS.forEach(([k,l])=>{ const g=res.mps[k]; b.append(el("tr",{},el("td",{text:l}),el("td",{class:"n",text:fmt(g.m)}),el("td",{class:"n",text:fmt(g.f)}),el("td",{class:"n",text:fmt(g.t)}))); });
-  tb.append(b); box.append(el("div",{class:"tablewrap"},tb));
-  warns.forEach(w=>box.append(el("div",{class:"msg warn",text:w})));
-  if(!found.length){ box.append(el("div",{class:"msg err",text:"No MPS values found in "+term+". Make sure the scores are entered and the file was saved after calculating."})); out.append(box); return; }
-  const onlyTotal=found.some(([k])=>res.mps[k].m==null&&res.mps[k].f==null&&res.mps[k].t!=null);
-  if(onlyTotal) box.append(el("div",{class:"msg warn",text:"For some rows only the total was found, not male and female. The total will be placed in both boxes so the average stays correct."}));
-  if(isClosed()){ box.append(el("div",{class:"msg err",text:"This term is closed."})); out.append(box); return; }
-  const sectionName=titleCase(res.meta.section||"");
+  box.append(el("h3",{text:"Found in "+o.tName+" of this file"}),
+    el("p",{class:"hint",text:[meta.subject,meta.grade,meta.section?("Section "+meta.section):"",meta.sy?("SY "+meta.sy):""].filter(Boolean).join(" · ")||"The grade, section and subject could not be read."}));
+  if(!stops.length || found.length){
+    const tb=el("table",{class:"mps"}); tb.append(el("thead",{},el("tr",{},...["Assessment","Male","Female","Total"].map(x=>el("th",{text:x})))));
+    const b=el("tbody"); ASSESS.forEach(([k,l])=>{ const g=res.mps[k]; b.append(el("tr",{},el("td",{text:l}),el("td",{class:"n",text:fmt(g.m)}),el("td",{class:"n",text:fmt(g.f)}),el("td",{class:"n",text:fmt(g.t)}))); });
+    tb.append(b); box.append(el("div",{class:"tablewrap"},tb));
+    const det=el("details",{style:"margin-top:8px"},el("summary",{text:"Where these numbers came from"}));
+    const ul=el("ul",{class:"hint",style:"margin:6px 0 0 18px"});
+    ECR_BLOCKS.forEach(([k])=>{ const w=res.where[k]; if(!w.label){ ul.append(el("li",{text:assessName(k)+": not found"})); return; }
+      ul.append(el("li",{text:assessName(k)+": "+o.tName+" "+[w.m?"male "+w.m:"",w.f?"female "+w.f:"",w.t?"total "+w.t:""].filter(Boolean).join(", ")})); });
+    if(meta.src.section||meta.src.grade||meta.src.subject) ul.append(el("li",{text:o.dsName+": "+["grade "+(meta.src.grade||"?"),"section "+(meta.src.section||"?"),"subject "+(meta.src.subject||"?")].join(", ")}));
+    det.append(ul); box.append(det);
+  }
+  stops.forEach(t=>box.append(el("div",{class:"msg err"},el("b",{text:"This file cannot be used yet. "}),t)));
+  notes.forEach(t=>box.append(el("div",{class:"msg warn",text:t})));
+  if(stops.length){ box.append(el("p",{class:"hint",style:"margin-top:10px",text:"Nothing on your page was changed."})); out.append(box); return; }
+  if(isClosed()){ box.append(el("div",{class:"msg err",text:"This term is closed, so entries can no longer be changed. If you still need to submit, please ask the SMEA coordinator to reopen it."})); out.append(box); return; }
+  if(!S.loadOk){ box.append(el("div",{class:"msg err",text:"Your saved entries have not loaded yet, so values cannot be placed. Reload the page and try again."})); out.append(box); return; }
+
+  const sectionRaw=meta.section||"";
+  const sectionName=sectionRaw?titleCase(cleanSection(sectionRaw)):"";
   const hasMps=(r)=>ASSESS.some(([k])=>String(r[k+"_m"]).trim()!==""||String(r[k+"_f"]).trim()!=="");
   const applyEcr=(rep)=>{
     if(!rep){ rep=blankReport(area,sectionName); S.reports.push(rep); }
-    if(sectionName) rep.section=sectionName;
+    else if(sectionName && (!hasData(rep)||!rep.section.trim())) rep.section=sectionName;
     if(rep.section) remember("smea_section",rep.section);
     ECR_BLOCKS.forEach(([k])=>{ const g=res.mps[k]; const m=g.m??(g.f==null?g.t:null), f=g.f??(g.m==null?g.t:null);
       if(m!=null) rep[k+"_m"]=String(m); if(f!=null) rep[k+"_f"]=String(f); });
     S.active=area; S.sel[area]=areaReports(area).indexOf(rep); markDirty(); renderTabs(); renderArea();
-    out.innerHTML=""; out.append(el("div",{class:"msg ok",text:"Values placed in "+area+(rep.section?" · Section "+rep.section:"")+". Check them, then press Save my entries."}));
-    $("ecrFile").value="";
+    const parts=["Values placed in "+area+(rep.section?" · Section "+rep.section:"")+". Check them, then press Save my entries."];
+    if(sectionRaw && rep.section.toLowerCase()!==sectionRaw.toLowerCase()) parts.push("The class record calls this section \""+sectionRaw+"\"; it is shown here as \""+rep.section+"\". You can change the Section box if that is not right.");
+    if(!sectionRaw) parts.push("The class record has no section name, so please type the section in the Section box before saving.");
+    notice(parts,"ok"); out.innerHTML=""; $("ecrFile").value="";
+    if(!sectionRaw||!rep.section) try{ $("f_section").focus(); }catch(e){}
   };
-  const useBtn=el("button",{class:"btn",type:"button",style:"margin-top:12px",text:"Use these values for "+area+(sectionName?" · "+sectionName:""),onclick:()=>{
-    const list=areaReports(area);
-    const rep=list.find(r=>sectionName&&r.section.trim().toLowerCase()===sectionName.toLowerCase())
-         || list.find(r=>!hasData(r) && (!r.section.trim()||!sectionName))
-         || list.find(r=>!hasData(r));
-    // never overwrite MPS already entered for this learning area and section without asking
+  // never overwrite MPS already entered for this area and section without asking
+  const place=(rep)=>{
     if(rep && hasMps(rep)){
       const ask=el("div",{class:"msg warn",style:"margin-top:12px"},
         el("p",{style:"margin:0 0 8px",text:area+(rep.section?" · Section "+rep.section:"")+" already has MPS entered. Replace the male and female MPS with the values from this file? Your competencies and remarks are not changed."}),
@@ -359,10 +553,38 @@ $("ecrFile").addEventListener("change",async(ev)=>{
       useBtn.classList.add("hidden"); box.append(ask); return;
     }
     applyEcr(rep);
+  };
+  const useBtn=el("button",{class:"btn",type:"button",style:"margin-top:12px",text:"Use these values for "+area+(sectionName?" · "+sectionName:""),onclick:()=>{
+    const list=areaReports(area), named=list.filter(r=>r.section.trim());
+    const same=sectionName?named.find(r=>sectionRelation(r.section,sectionName)==="same"):null;
+    const close=(!same&&sectionName)?named.filter(r=>sectionRelation(r.section,sectionName)==="similar"):[];
+    const blank=()=>list.find(r=>!hasData(r)&&(!r.section.trim()||!sectionName))||list.find(r=>!hasData(r))||null;
+    if(same) return place(same);
+    if(close.length){
+      const c=close[0];
+      const ask=el("div",{class:"msg warn",style:"margin-top:12px"},
+        el("p",{style:"margin:0 0 8px",text:"The class record says the section is \""+sectionName+"\", but you already have \""+c.section.trim()+"\" in "+area+". Are they the same section?"}),
+        el("div",{class:"seg"},
+          el("button",{class:"btn",type:"button",text:"Yes, same section (use \""+c.section.trim()+"\")",onclick:()=>{ ask.remove(); place(c); }}),
+          el("button",{class:"btn soft",type:"button",text:"No, add \""+sectionName+"\" as a new section",onclick:()=>{ ask.remove(); place(blank()); }})));
+      useBtn.classList.add("hidden"); box.append(ask); return;
+    }
+    place(blank());
   }});
+  if(confirms.length){
+    useBtn.disabled=true;
+    confirms.forEach(t=>box.append(el("div",{class:"msg warn",text:t})));
+    const cb=el("input",{type:"checkbox",id:"ecrOk"});
+    cb.addEventListener("change",()=>{ useBtn.disabled=!cb.checked; });
+    box.append(el("label",{style:"display:flex;gap:8px;align-items:flex-start;margin-top:10px;font-weight:600"},cb,el("span",{text:"I checked: this is my "+area+" class record for Grade "+S.me.grade+"."})));
+  }
   box.append(useBtn);
   out.append(box);
-});
+}
+$("ecrFile").addEventListener("change",runEcr);
+// changing the term or learning area re-reads the chosen file, so the checks always match what is selected
+$("ecrTerm").addEventListener("change",()=>{ if($("ecrFile").files.length) runEcr(); });
+$("ecrArea").addEventListener("change",()=>{ if($("ecrFile").files.length) runEcr(); });
 
 
 // ---------------- PIN change / sign out ----------------

@@ -39,6 +39,7 @@
 
   <!-- TEACHER ENTRY -->
   <section id="entry" class="hidden">
+    <div id="notice" role="status" aria-live="polite"></div>
     <div class="card">
       <div class="row two">
         <div><label for="period">Reporting period</label><select id="period"></select></div>
@@ -48,7 +49,7 @@
     </div>
     <div class="card" id="ecrCard">
       <h2>Fill from your class record</h2>
-      <p class="hint">Optional. Choose the term and learning area, then pick your Electronic Class Record (.xlsx). The page reads the section name and the male, female and total MPS figures only. The file stays on your device, is not uploaded, and no learner names are read or sent.</p>
+      <p class="hint">Optional. Choose the term and learning area, then pick your Electronic Class Record (.xlsx). The page reads the section name and the male, female and total MPS figures only. The file stays on your device, is not uploaded, and no learner names are read or sent. Before any number is used, the page checks that the file is for your grade, the right term and the learning area you chose, and it explains anything it cannot use.</p>
       <div class="row two">
         <div><label for="ecrTerm">Term sheet in the file</label><select id="ecrTerm"><option value="TERM 1">Term 1</option><option value="TERM 2">Term 2</option><option value="TERM 3">Term 3</option></select></div>
         <div><label for="ecrArea">Learning area</label><select id="ecrArea"></select></div>

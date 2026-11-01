@@ -36,3 +36,12 @@ A Supabase project (URL and publishable key are at the top of `entry.js`; the pu
 - Database: `smea2_reports`, `smea2_llc`, `smea2_areas`, `smea_periods.term`; RPCs `smea2_login`, `smea2_load`, `smea2_save`, `smea2_admin_overview`, `smea2_admin_set`.
 - Class record reader now also reads the section (DATA SHEET L9) and male (col I), female (col M) and total (col Q) MPS.
 - `competencies.json` is public curriculum data. Teacher names and scores are never stored in this repository.
+
+
+## Safeguards (what the page protects, and what it tells the teacher)
+
+- **Saving is off until the saved entries have loaded.** If loading fails (no connection, server problem, a failed period switch), the page says so, hides the form and offers *Try again*. This stops a blank screen from being saved over earlier entries.
+- **Only what the teacher removes is deleted.** The page sends an explicit `removed` list with each save, and `smea2_save` deletes only those reports (SQL in `db/smea2_save.sql`). Entries saved from another device in the meantime are kept. A page that does not send `removed` gets the old behaviour. When a teacher empties or renames a saved section, the page explains and asks them to confirm first.
+- **Class record checks before any number is used.** Wrong grade, wrong term sheet, values above 100, a file with no calculated results, or a file that is not a class record stop the upload with an explanation. A different subject, or a file whose grade/subject cannot be read, needs a tick box. Rows the page could not find or read are listed.
+- **The reader finds things by label.** The DATA SHEET grade, section, subject and school year are found by their labels (with the template's usual cells as a fallback). The TERM sheet's MPS blocks are found by their "MEAN PERCENTAGE SCORE" labels, and the male/female/total columns by their headers (with the template's usual columns as a fallback). "Where these numbers came from" shows the cells used.
+- **Section names are matched after cleaning.** "GR. 5 - CUCUMBER", "5-Cucumber" and "Grade 5 Cucumber" all become "Cucumber". The page asks before treating a close name as a different section, blocks two entries that are the same section, and asks for confirmation when two names are very close.
