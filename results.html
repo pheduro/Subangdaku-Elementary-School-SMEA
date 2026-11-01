@@ -33,6 +33,7 @@ var D=SMEA,U=UI;
 var SB_URL="https://aymubssotxkexsmatbjv.supabase.co";
 var SB_KEY="sb_publishable_jDQXZsbtASk9QhaP-374JQ_OC7RWIbz";
 var ASSESS=[["ww","Written Works"],["pt","Performance Tasks"],["st1","Summative Test 1"],["st2","Summative Test 2"],["te","Term Examination"]];
+var AL=function(a){return a==="EPP"?"EPP/TLE":a};
 var AREA_ORDER=["GMRC","Mathematics","Reading & Literacy","Language","Filipino","English","Makabansa","Araling Panlipunan","Science","EPP","Music & Arts","PE & Health"];
 var TERM_COLORS=["#4285f4","#1a3a8f","#9ec1fa"], TERM_LABEL_INK=["#000","#fff","#000"]; /* blue palette: Term 1 blue, Term 2 navy, Term 3 light blue */
 var S={periods:[],byTerm:{},area:null,term:null,grade:1,loaded:null};
@@ -93,7 +94,7 @@ function drawChart(cv,assessName,area,data){
   c.fillStyle="#fff"; c.fillRect(0,0,LW,LH);
   var FONT="Arial, Helvetica, sans-serif";
   // title: black text, then the learning area in bold maroon italics (school color)
-  var t1="MPS- "+assessName, t2="("+area.toUpperCase()+")";
+  var t1="MPS- "+assessName, t2="("+AL(area).toUpperCase()+")";
   var ts=40;
   c.font="bold "+ts+"px "+FONT; var w1=c.measureText(t1).width; c.font="italic bold "+ts+"px "+FONT; var w2=c.measureText(t2).width;
   while(w1+w2>LW-40&&ts>20){ts-=2;c.font="bold "+ts+"px "+FONT;w1=c.measureText(t1).width;c.font="italic bold "+ts+"px "+FONT;w2=c.measureText(t2).width}
@@ -155,7 +156,7 @@ function render(){
    '<div id="charts"></div>'+
    '<div class="sec-h"><div><h2>Display board</h2><p>Mean of the male and female MPS for each teacher and learning area. Scores below 75 are shaded red.</p></div></div>'+
    '<section class="card"><div class="ctl"><div><label for="selTerm">Term</label><select id="selTerm"></select></div></div><div class="tabs" id="gtabs"></div><div id="board"></div></section>';
-  var sa=document.getElementById("selArea"); areas.forEach(function(a){var o=document.createElement("option");o.value=a;o.textContent=a;sa.appendChild(o)}); sa.value=S.area;
+  var sa=document.getElementById("selArea"); areas.forEach(function(a){var o=document.createElement("option");o.value=a;o.textContent=AL(a);sa.appendChild(o)}); sa.value=S.area;
   sa.onchange=function(){S.area=sa.value;renderCharts()};
   var st=document.getElementById("selTerm"); S.periods.forEach(function(p){var o=document.createElement("option");o.value=p.term;o.textContent=p.label+(S.byTerm[p.term].length?"":" (no entries)");st.appendChild(o)}); st.value=S.term;
   st.onchange=function(){S.term=Number(st.value);renderBoard()};

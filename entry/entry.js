@@ -196,7 +196,7 @@ function areaDone(a){ return areaReports(a).some(r=>ASSESS.every(([k])=>String(r
 function renderTabs(){
   $("tabs").innerHTML="";
   S.areas.forEach(a=>{
-    $("tabs").append(el("button",{class:"tab",role:"tab",type:"button","aria-selected":String(a===S.active),onclick:()=>{S.active=a;renderTabs();renderArea();}},a,el("span",{class:"dot"+(areaDone(a)?" done":"")})));
+    $("tabs").append(el("button",{class:"tab",role:"tab",type:"button","aria-selected":String(a===S.active),onclick:()=>{S.active=a;renderTabs();renderArea();}},AL(a),el("span",{class:"dot"+(areaDone(a)?" done":"")})));
   });
 }
 function renderTabsDots(){ document.querySelectorAll(".tab").forEach((t,i)=>{ const d=t.querySelector(".dot"); if(d) d.className="dot"+(areaDone(S.areas[i])?" done":""); }); }
@@ -463,7 +463,7 @@ async function openEcr(file,termNum){
   const wb=pick.length?XLSX.read(buf,{type:"array",sheets:pick,sheetStubs:true,cellStyles:false,cellHTML:false}):null;
   return {names,dsName,tName,wb};
 }
-function fillEcrAreas(){ const sel=$("ecrArea"); sel.innerHTML=""; S.areas.forEach(a=>sel.append(el("option",{value:a,text:a}))); sel.value=S.active||S.areas[0]; }
+function fillEcrAreas(){ const sel=$("ecrArea"); sel.innerHTML=""; S.areas.forEach(a=>sel.append(el("option",{value:a,text:AL(a)}))); sel.value=S.active||S.areas[0]; }
 
 function ecrProblem(title,lines){ const out=$("ecrOut"); out.innerHTML=""; const d=el("div",{class:"msg err"},el("b",{text:title})); (Array.isArray(lines)?lines:[lines]).forEach(t=>d.append(el("p",{style:"margin:6px 0 0",text:t}))); out.append(d); }
 
@@ -637,6 +637,7 @@ async function loadAdmin(){
 function asLlcObject(r){ const o=blankLlc(); (r.llc||[]).forEach(l=>{ const row=o[l.assess]&&o[l.assess][l.rank-1]; if(row){ row.competency=l.competency||""; row.intervention=l.intervention||""; row.timeline=l.timeline||""; row.status=l.status||""; } }); return {...r,llc:o}; }
 const cls = (v) => v==null ? "" : (v<75?"lo":"hi");
 const mean = (xs) => { const v=xs.filter(x=>x!=null); return v.length?v.reduce((a,b)=>a+b,0)/v.length:null; };
+const AL=a=>a==="EPP"?"EPP/TLE":a;
 const AREA_ORDER=["GMRC","Mathematics","Reading & Literacy","Language","Filipino","English","Makabansa","Araling Panlipunan","Science","EPP","Music & Arts","PE & Health"];
 function boardRows(d,grade){
   // one row per teacher + section within each learning area, in the order of the monitoring workbook
@@ -650,7 +651,7 @@ function workbookFor(d,periodLabel){
     const aoa=[]; const blocks=boardRows(d,g);
     blocks.forEach(b=>{
       aoa.push(["","Learning Area","Grade Level","WW MPS","PT MPS","ST 1 MPS","ST 2 MPS","TE MPS","Term Average","Remarks"]);
-      aoa.push(["",b.area,g]);
+      aoa.push(["",AL(b.area),g]);
       b.rows.forEach(r=>aoa.push([r.teacher+(b.rows.filter(x=>x.code===r.code).length>1?" ("+r.section+")":""),"",g,...ASSESS.map(([k])=>r.v[k]==null?"":+r.v[k].toFixed(2)),r.avg==null?"":+r.avg.toFixed(2),r.remarks||""]));
       aoa.push(["","AVERAGE","",...ASSESS.map(([k])=>{const m=mean(b.rows.map(r=>r.v[k])); return m==null?"":+m.toFixed(2);}),(()=>{const m=mean(b.rows.map(r=>r.avg)); return m==null?"":+m.toFixed(2);})()]);
       aoa.push([]);
@@ -690,7 +691,7 @@ function renderAdmin(){
     const blocks=boardRows(d,A.grade);
     if(!blocks.length) card.append(el("p",{class:"hint",text:"No entries yet for Grade "+A.grade+" in this term."}));
     blocks.forEach(bl=>{
-      const t=el("table"); t.append(el("thead",{},el("tr",{},...[bl.area,"Section","WW","PT","ST 1","ST 2","TE","Term Avg"].map((x,i)=>el("th",{class:i>1?"n":"",text:x})))));
+      const t=el("table"); t.append(el("thead",{},el("tr",{},...[AL(bl.area),"Section","WW","PT","ST 1","ST 2","TE","Term Avg"].map((x,i)=>el("th",{class:i>1?"n":"",text:x})))));
       const tb=el("tbody");
       bl.rows.forEach(r=>tb.append(el("tr",{},el("td",{text:r.teacher}),el("td",{text:r.section}),...ASSESS.map(([k])=>el("td",{class:"n "+cls(r.v[k]),text:fmt(r.v[k])})),el("td",{class:"n "+cls(r.avg),text:fmt(r.avg)}))));
       const av=ASSESS.map(([k])=>mean(bl.rows.map(r=>r.v[k]))), ta=mean(bl.rows.map(r=>r.avg));

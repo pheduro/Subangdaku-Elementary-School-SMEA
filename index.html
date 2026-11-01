@@ -25,6 +25,10 @@ document.getElementById("banner").innerHTML=
  '<h1>Results that guide <em>what we do next</em></h1>'+
  '<p class="lead">'+U.esc(D.school)+' monitors learner results every term, then adjusts its plans. This is where those results live.</p>'+
  '<div class="cta"><a class="btn pri" href="sapm/index.html">Open Term 1 SAPM dashboard '+U.icon("arrow")+'</a><a class="btn sec" href="gallery.html">'+U.icon("image")+' View photos</a></div></div></section>';
+(function(){var h=document.querySelector(".banner h1"),i=0;if(!h)return;
+ (function wrap(n){[].slice.call(n.childNodes).forEach(function(c){
+  if(c.nodeType===3){var f=document.createDocumentFragment();c.textContent.split(/(\s+)/).forEach(function(t){if(!t)return;if(/^\s+$/.test(t)){f.appendChild(document.createTextNode(" "))}else{var sp=document.createElement("span");sp.className="w";sp.style.setProperty("--i",i++);sp.textContent=t;f.appendChild(sp)}});n.replaceChild(f,c)}
+  else if(c.nodeType===1)wrap(c)})})(h)})();
 document.getElementById("app").innerHTML=
  '<section class="grid g4 pull">'+
   U.stat(U.fmt(D.enrollment.total),"learners enrolled (incl. SPED)","accent","users")+
