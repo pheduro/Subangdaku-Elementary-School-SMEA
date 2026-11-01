@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Results and Charts · Subangdaku ES SMEA</title><link rel="stylesheet" href="assets/style.css">
+<style>
+.ctl{display:flex;flex-wrap:wrap;gap:14px;align-items:end;margin:6px 0 4px}
+.ctl label{display:block;font-weight:600;font-size:.85rem;margin-bottom:4px}
+.ctl select{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font:inherit;min-width:200px}
+.sbtn{font:inherit;font-weight:600;font-size:.88rem;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:9px 16px;border-radius:999px}
+.sbtn:hover{border-color:var(--emerald)}
+.sbtn.pri{background:var(--navy-2);border-color:var(--navy-2);color:#fff}
+.chartcard{margin-top:16px}
+.chartcard canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;background:#fff}
+.chartcard .acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;align-items:center}
+.chartcard .acts .ok{color:var(--forest);font-size:.85rem;font-weight:600}
+.rt{width:100%;border-collapse:collapse;font-size:.92rem}
+.rt th,.rt td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left}
+.rt th.n,.rt td.n{text-align:right;font-variant-numeric:tabular-nums}
+.rt thead th{background:var(--ok-bg);font-size:.82rem}
+.rt td.lo{background:#fde2dc;color:#9b1c0c;font-weight:600}
+@media (prefers-color-scheme:dark){.rt td.lo{background:#4a2018;color:#ffb4a3}}
+.tw{overflow-x:auto;margin-bottom:16px}
+.note{color:var(--mute);font-size:.88rem}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 12px;border-bottom:1px solid var(--line);padding-bottom:12px}
+.tab{font:inherit;font-weight:600;font-size:.92rem;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:9px 18px;border-radius:999px;transition:background .2s,color .2s,border-color .2s}
+.tab:hover{border-color:var(--emerald)}
+.tab.on{background:var(--navy-2);border-color:var(--navy-2);color:#fff}
+</style></head>
+<body data-page="results" data-root="">
+<main class="wrap" id="app"></main>
+<script src="data/smea.js"></script><script src="assets/app.js"></script>
+<script>
+var D=SMEA,U=UI;
+var SB_URL="https://aymubssotxkexsmatbjv.supabase.co";
+var SB_KEY="sb_publishable_jDQXZsbtASk9QhaP-374JQ_OC7RWIbz";
+var ASSESS=[["ww","Written Works"],["pt","Performance Tasks"],["st1","Summative Test 1"],["st2","Summative Test 2"],["te","Term Examination"]];
+var AREA_ORDER=["GMRC","Mathematics","Reading & Literacy","Language","Filipino","English","Makabansa","Araling Panlipunan","Science","EPP","Music & Arts","PE & Health"];
+var TERM_COLORS=["#4285f4","#1a3a8f","#9ec1fa"], TERM_LABEL_INK=["#000","#fff","#000"]; /* blue palette: Term 1 blue, Term 2 navy, Term 3 light blue */
+var S={periods:[],byTerm:{},area:null,term:null,grade:1,loaded:null};
+
+function rpc(fn,args){
+  return fetch(SB_URL+"/rest/v1/rpc/"+fn,{method:"POST",headers:{"apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY,"Content-Type":"application/json"},body:JSON.stringify(args||{})})
+    .then(function(r){return r.ok?r.json():{ok:false,error:"server"}}).catch(function(){return {ok:false,error:"network"}});
+}
+function num(v){return v==null||v===""?null:Number(v)}
+function avgMF(m,f){var a=num(m),b=num(f);if(a!=null&&b!=null)return(a+b)/2;return a!=null?a:(b!=null?b:null)}
+function mean(xs){var v=xs.filter(function(x){return x!=null});return v.length?v.reduce(function(a,b){return a+b},0)/v.length:null}
+function f2(v){return v==null?"–":String(+v.toFixed(2))}
+function prep(rs){return rs.map(function(r){var v={};ASSESS.forEach(function(a){v[a[0]]=avgMF(r[a[0]+"_m"],r[a[0]+"_f"])});var all=ASSESS.map(function(a){return v[a[0]]});r.v=v;r.avg=all.some(function(x){return x==null})?null:mean(all);return r})}
+
+function load(){
+  var app=document.getElementById("app");
+  app.innerHTML=U.hero("Results · "+D.sy,"Results and Charts","Term MPS by learning area and grade, with charts ready to paste into a presentation.","grid")+'<p class="note" style="margin-top:18px">Loading the latest data…</p>';
+  return rpc("smea2_public_board",{p_period:null}).then(function(first){
+    if(!first.ok){
+      app.innerHTML=U.hero("Results · "+D.sy,"Results and Charts","Term MPS by learning area and grade, with charts ready to paste into a presentation.","grid")+
+        '<section class="card" style="margin-top:22px"><h3>'+(first.error==="not_shared"?"This section is not open yet":"Could not load the data")+'</h3><p>'+(first.error==="not_shared"?"The SMEA coordinator has not published the results board yet. Please check again later.":"Check your internet connection and try again.")+'</p><button class="sbtn pri" id="retry" type="button">Try again</button></section>';
+      document.getElementById("retry").onclick=load; return;
+    }
+    S.periods=first.periods||[];
+    return Promise.all(S.periods.map(function(p){return p.id===first.period?Promise.resolve(first):rpc("smea2_public_board",{p_period:p.id})})).then(function(res){
+      S.byTerm={};
+      S.periods.forEach(function(p,i){S.byTerm[p.term]=res[i]&&res[i].ok?prep(res[i].reports||[]):[]});
+      var withData=S.periods.filter(function(p){return S.byTerm[p.term].length}).map(function(p){return p.term});
+      S.term=withData.length?withData[withData.length-1]:(S.periods[0]&&S.periods[0].term);
+      var gs=(S.byTerm[S.term]||[]).map(function(r){return r.grade}); S.grade=gs.length?Math.min.apply(null,gs):1;
+      var areas=areaList(); if(!S.area||areas.indexOf(S.area)<0) S.area=areas[0]||null;
+      S.loaded=new Date(); render();
+    });
+  });
+}
+function areaList(){
+  var set={}; Object.keys(S.byTerm).forEach(function(t){S.byTerm[t].forEach(function(r){set[r.area]=1})});
+  return Object.keys(set).sort(function(a,b){var x=AREA_ORDER.indexOf(a),y=AREA_ORDER.indexOf(b);return(x<0?99:x)-(y<0?99:y)||a.localeCompare(b)});
+}
+function lastUpdate(){var m=0;Object.keys(S.byTerm).forEach(function(t){S.byTerm[t].forEach(function(r){var d=Date.parse(r.updated_at);if(d>m)m=d})});return m?new Date(m):null}
+
+/* ---------- chart drawing (same look as the school slides: blue columns, big bold labels, TERM legend) ---------- */
+function trimNum(v){return String(+v.toFixed(2))}
+function chartData(area,key){
+  var terms=S.periods.map(function(p){return p.term});
+  var gradeSet={}; terms.forEach(function(t){S.byTerm[t].forEach(function(r){if(r.area===area)gradeSet[r.grade]=1})});
+  var grades=Object.keys(gradeSet).map(Number).sort();
+  var series=terms.map(function(t,i){
+    var vals=grades.map(function(g){return mean(S.byTerm[t].filter(function(r){return r.area===area&&r.grade===g}).map(function(r){return r.v[key]}))});
+    var school=mean(vals);
+    return {term:t,idx:i,vals:vals.concat([school])};
+  });
+  return {cats:grades.map(function(g){return "GRADE "+g}).concat(["SCHOOL MPS"]),series:series};
+}
+function drawChart(cv,assessName,area,data){
+  var K=2,LW=970,LH=434; cv.width=LW*K; cv.height=LH*K;
+  var c=cv.getContext("2d"); c.setTransform(K,0,0,K,0,0);
+  c.fillStyle="#fff"; c.fillRect(0,0,LW,LH);
+  var FONT="Arial, Helvetica, sans-serif";
+  // title: black text, then the learning area in bold maroon italics (school color)
+  var t1="MPS- "+assessName, t2="("+area.toUpperCase()+")";
+  var ts=40;
+  c.font="bold "+ts+"px "+FONT; var w1=c.measureText(t1).width; c.font="italic bold "+ts+"px "+FONT; var w2=c.measureText(t2).width;
+  while(w1+w2>LW-40&&ts>20){ts-=2;c.font="bold "+ts+"px "+FONT;w1=c.measureText(t1).width;c.font="italic bold "+ts+"px "+FONT;w2=c.measureText(t2).width}
+  var x0=(LW-w1-w2)/2; c.textBaseline="alphabetic";
+  c.font="bold "+ts+"px "+FONT; c.fillStyle="#000"; c.textAlign="left"; c.fillText(t1,x0,56);
+  c.font="italic bold "+ts+"px "+FONT; c.fillStyle="#9a1c33"; c.fillText(t2,x0+w1,56);
+
+  var L=44,R=LW-22,T=100,B=345, active=data.series.filter(function(s){return s.vals.some(function(v){return v!=null})});
+  var all=[]; active.forEach(function(s){s.vals.forEach(function(v){if(v!=null)all.push(v)})});
+  var top=Math.max(90,Math.ceil((Math.max.apply(null,all.concat([0])))/10)*10); if(top>100)top=100;
+  function Y(v){return B-(B-T)*v/top}
+  // y axis labels (no gridlines, like the slides)
+  c.font="10px "+FONT; c.fillStyle="#595959"; c.textAlign="right"; c.textBaseline="middle";
+  for(var v=0;v<=top;v+=10) c.fillText(String(v),L-8,Y(v));
+  c.strokeStyle="#d9d9d9"; c.lineWidth=1; c.beginPath(); c.moveTo(L,B+.5); c.lineTo(R,B+.5); c.stroke();
+  var n=data.cats.length, gw=(R-L)/n, nS=Math.max(active.length,1);
+  var cluster=gw*(nS===1?0.4:0.72), bw=cluster/nS;
+  data.cats.forEach(function(cat,i){
+    var gx=L+gw*i+gw/2;
+    c.font="11px "+FONT; c.fillStyle="#595959"; c.textAlign="center"; c.textBaseline="alphabetic"; c.fillText(cat,gx,B+19);
+    active.forEach(function(s,j){
+      var val=s.vals[i]; if(val==null) return;
+      var bx=gx-cluster/2+bw*j, by=Y(val), bh=B-by;
+      c.fillStyle=TERM_COLORS[s.idx]||"#4285f4"; c.fillRect(bx,by,bw-(nS>1?3:0),bh);
+      var txt=trimNum(val), fs=Math.min(28,Math.round(bw*0.34)+4);
+      c.font="bold "+fs+"px "+FONT; while(c.measureText(txt).width>bw-6&&fs>9){fs--;c.font="bold "+fs+"px "+FONT}
+      c.textAlign="center"; c.textBaseline="alphabetic";
+      var inside=bh>fs+14;
+      c.fillStyle=inside?(TERM_LABEL_INK[s.idx]||"#000"):"#000";
+      c.fillText(txt,bx+(bw-(nS>1?3:0))/2,inside?by+fs+6:by-6);
+    });
+  });
+  // legend: TERM 1 / TERM 2 / TERM 3
+  c.font="10px "+FONT; c.textBaseline="middle"; c.textAlign="left";
+  var items=S.periods.map(function(p,i){return {t:"TERM "+p.term,col:TERM_COLORS[i]||"#9ec1fa"}});
+  var wTot=items.reduce(function(a,it){return a+c.measureText(it.t).width+26},0), lx=(LW-wTot)/2+8, ly=398;
+  items.forEach(function(it){c.fillStyle=it.col;c.fillRect(lx,ly-4,8,8);c.fillStyle="#595959";c.fillText(it.t,lx+13,ly);lx+=c.measureText(it.t).width+26});
+}
+function fileBase(a,area){return "MPS-"+a.replace(/\s+/g,"")+"-"+area.replace(/[^A-Za-z0-9]+/g,"")}
+function savePng(cv,name){cv.toBlob(function(b){var u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download=name+".png";document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},3000)},"image/png")}
+function copyPng(cv,done){
+  if(!(navigator.clipboard&&window.ClipboardItem)){done("Copy is not supported in this browser. Use Save PNG.");return}
+  cv.toBlob(function(b){navigator.clipboard.write([new ClipboardItem({"image/png":b})]).then(function(){done("Copied. Paste it into your slide.")},function(){done("Could not copy. Use Save PNG.")})},"image/png");
+}
+
+/* ---------- page ---------- */
+function render(){
+  var app=document.getElementById("app"), areas=areaList(), upd=lastUpdate();
+  var h=U.hero("Results · "+D.sy,"Results and Charts","Term MPS by learning area and grade, with charts ready to paste into a presentation.","grid");
+  if(!areas.length){
+    app.innerHTML=h+'<section class="card" style="margin-top:22px"><h3>No results entered yet</h3><p>Charts appear here as soon as teachers save their MPS for a term.</p><button class="sbtn pri" id="refresh" type="button">Refresh</button></section>';
+    document.getElementById("refresh").onclick=load; return;
+  }
+  app.innerHTML=h+
+   '<div class="sec-h"><div><h2>Charts for presentations</h2><p>Pick a learning area. Each chart shows Grades and the SCHOOL MPS, with one color per term. Save it as a picture or copy it straight into your slide.</p></div></div>'+
+   '<section class="card"><div class="ctl"><div><label for="selArea">Learning area</label><select id="selArea"></select></div>'+
+   '<button class="sbtn" id="saveAll" type="button">Save all 5 charts (PNG)</button><button class="sbtn" id="refresh" type="button">Refresh data</button></div>'+
+   '<p class="note" style="margin:10px 0 0">Last updated by teachers: '+(upd?U.esc(upd.toLocaleString()):"–")+' · checked '+U.esc(S.loaded.toLocaleTimeString())+'</p></section>'+
+   '<div id="charts"></div>'+
+   '<div class="sec-h"><div><h2>Display board</h2><p>Mean of the male and female MPS for each teacher and learning area. Scores below 75 are shaded red.</p></div></div>'+
+   '<section class="card"><div class="ctl"><div><label for="selTerm">Term</label><select id="selTerm"></select></div></div><div class="tabs" id="gtabs"></div><div id="board"></div></section>';
+  var sa=document.getElementById("selArea"); areas.forEach(function(a){var o=document.createElement("option");o.value=a;o.textContent=a;sa.appendChild(o)}); sa.value=S.area;
+  sa.onchange=function(){S.area=sa.value;renderCharts()};
+  var st=document.getElementById("selTerm"); S.periods.forEach(function(p){var o=document.createElement("option");o.value=p.term;o.textContent=p.label+(S.byTerm[p.term].length?"":" (no entries)");st.appendChild(o)}); st.value=S.term;
+  st.onchange=function(){S.term=Number(st.value);renderBoard()};
+  document.getElementById("refresh").onclick=load;
+  document.getElementById("saveAll").onclick=function(){
+    var cvs=[].slice.call(document.querySelectorAll("#charts canvas"));
+    cvs.forEach(function(cv,i){setTimeout(function(){savePng(cv,cv.dataset.name)},i*400)});
+  };
+  var gt=document.getElementById("gtabs");
+  for(var g=1;g<=6;g++)(function(g){var b=document.createElement("button");b.type="button";b.className="tab"+(S.grade===g?" on":"");b.textContent="Grade "+g;b.onclick=function(){S.grade=g;[].forEach.call(gt.children,function(x,i){x.classList.toggle("on",i+1===g)});renderBoard()};gt.appendChild(b)})(g);
+  renderCharts(); renderBoard();
+}
+function renderCharts(){
+  var box=document.getElementById("charts"); box.innerHTML="";
+  ASSESS.forEach(function(a){
+    var data=chartData(S.area,a[0]);
+    var card=document.createElement("section"); card.className="card chartcard";
+    var cv=document.createElement("canvas"); cv.dataset.name=fileBase(a[1],S.area);
+    cv.setAttribute("role","img"); cv.setAttribute("aria-label",a[1]+" MPS for "+S.area+": "+data.cats.map(function(c,i){var v=null;data.series.forEach(function(s){if(s.vals[i]!=null)v=s.vals[i]});return c+" "+(v==null?"no data":f2(v))}).join(", "));
+    card.appendChild(cv);
+    var acts=document.createElement("div"); acts.className="acts";
+    var b1=document.createElement("button"); b1.className="sbtn pri"; b1.type="button"; b1.textContent="Save PNG"; b1.onclick=function(){savePng(cv,cv.dataset.name)};
+    var b2=document.createElement("button"); b2.className="sbtn"; b2.type="button"; b2.textContent="Copy image";
+    var ok=document.createElement("span"); ok.className="ok"; ok.setAttribute("aria-live","polite");
+    b2.onclick=function(){copyPng(cv,function(m){ok.textContent=m})};
+    acts.append(b1,b2,ok); card.appendChild(acts); box.appendChild(card);
+    if(!data.series.some(function(s){return s.vals.some(function(v){return v!=null})})){ card.innerHTML='<p class="note">No '+U.esc(a[1])+' entries yet for '+U.esc(S.area)+'.</p>'; return; }
+    drawChart(cv,a[1],S.area,data);
+  });
+}
+function renderBoard(){
+  var box=document.getElementById("board"); box.innerHTML="";
+  var rows=(S.byTerm[S.term]||[]).filter(function(r){return r.grade===S.grade});
+  var areas=[]; rows.forEach(function(r){if(areas.indexOf(r.area)<0)areas.push(r.area)});
+  areas.sort(function(a,b){var x=AREA_ORDER.indexOf(a),y=AREA_ORDER.indexOf(b);return(x<0?99:x)-(y<0?99:y)});
+  if(!areas.length){box.innerHTML='<p class="note">No entries yet for Grade '+S.grade+' in this term.</p>';return}
+  var cls=function(v){return v==null?"":(v<75?"lo":"")};
+  areas.forEach(function(a){
+    var rs=rows.filter(function(r){return r.area===a});
+    var html='<div class="tw"><table class="rt"><thead><tr><th>'+U.esc(a)+'</th><th>Section</th>'+ASSESS.map(function(x){return '<th class="n">'+({ww:"WW",pt:"PT",st1:"ST 1",st2:"ST 2",te:"TE"})[x[0]]+'</th>'}).join("")+'<th class="n">Term Avg</th></tr></thead><tbody>';
+    rs.forEach(function(r){html+='<tr><td>'+U.esc(r.teacher)+'</td><td>'+U.esc(r.section)+'</td>'+ASSESS.map(function(x){return '<td class="n '+cls(r.v[x[0]])+'">'+f2(r.v[x[0]])+'</td>'}).join("")+'<td class="n '+cls(r.avg)+'">'+f2(r.avg)+'</td></tr>'});
+    var av=ASSESS.map(function(x){return mean(rs.map(function(r){return r.v[x[0]]}))}), ta=mean(rs.map(function(r){return r.avg}));
+    html+='<tr style="font-weight:700"><td>AVERAGE</td><td></td>'+av.map(function(v){return '<td class="n '+cls(v)+'">'+f2(v)+'</td>'}).join("")+'<td class="n '+cls(ta)+'">'+f2(ta)+'</td></tr></tbody></table></div>';
+    box.insertAdjacentHTML("beforeend",html);
+  });
+}
+load();
+</script></body></html>

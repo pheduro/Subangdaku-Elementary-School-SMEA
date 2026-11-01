@@ -739,7 +739,19 @@ function renderAdmin(){
     const f=el("form",{class:"row two"}); const hi=el("input",{type:"text",maxlength:"120",value:(d.cfg&&d.cfg.school_head)||"","aria-label":"School Head name",placeholder:"Name of School Head"});
     const o=el("div",{id:"setOut"});
     f.append(hi,el("button",{class:"btn",type:"submit",text:"Save"}));
-    f.addEventListener("submit",async(e)=>{e.preventDefault(); const r=await rpc("smea2_admin_set",{p_pin:A.pin,p_key:"school_head",p_value:hi.value}); o.innerHTML=""; o.append(r.ok?el("div",{class:"msg ok",text:"Saved."}):el("div",{class:"msg err",text:errText(r)})); if(r.ok){ d.cfg={school_head:hi.value.trim()}; S.cfg=d.cfg; }});
+    f.addEventListener("submit",async(e)=>{e.preventDefault(); const r=await rpc("smea2_admin_set",{p_pin:A.pin,p_key:"school_head",p_value:hi.value}); o.innerHTML=""; o.append(r.ok?el("div",{class:"msg ok",text:"Saved."}):el("div",{class:"msg err",text:errText(r)})); if(r.ok){ d.cfg={...d.cfg,school_head:hi.value.trim()}; S.cfg=d.cfg; }});
     card.append(f,o);
+
+    // public Results page switch
+    const on=(d.cfg&&d.cfg.public_board)==="on";
+    const sw=el("div",{style:"margin-top:24px;padding-top:16px;border-top:1px solid var(--line)"});
+    const swOut=el("div",{id:"swOut"});
+    sw.append(el("h2",{text:"Results and Charts page"}),
+      el("p",{class:"hint",text:"The Results page shows every teacher's name with their MPS to anyone who has the site link. It is "+(on?"ON now.":"OFF now.")+" Turn it on only when you are ready to share, and off again at any time."}),
+      el("div",{class:"seg"},el("button",{class:"btn "+(on?"soft":""),type:"button",text:on?"Turn OFF":"Turn ON",onclick:async()=>{
+        const r=await rpc("smea2_admin_set",{p_pin:A.pin,p_key:"public_board",p_value:on?"off":"on"});
+        if(r.ok){ d.cfg={...d.cfg,public_board:on?"off":"on"}; renderAdmin(); } else { swOut.innerHTML=""; swOut.append(el("div",{class:"msg err",text:errText(r)})); }
+      }})),swOut);
+    card.append(sw);
   }
 }

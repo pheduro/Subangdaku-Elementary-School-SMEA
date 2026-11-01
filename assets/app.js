@@ -17,7 +17,8 @@
     arrow:"M5 12h14M13 5l7 7-7 7",
     pin:"M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z",
     edit:"M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z",
-    cal:"M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM16 2v4M8 2v4M3 10h18"
+    cal:"M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM16 2v4M8 2v4M3 10h18",
+    grid:"M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"
   };
   var icon = function(n,extra){return '<svg class="i '+(extra||"")+'" viewBox="0 0 24 24" aria-hidden="true"><path d="'+(P[n]||P.chart)+'"/></svg>'};
 
@@ -30,6 +31,7 @@
     ["outcomes","Learner Outcomes","outcomes.html","target"],
     ["practices","BLICs & Practices","practices.html","compass"],
     ["entry","Teacher Entry","entry/index.html","edit"],
+    ["results","Results","results.html","grid"],
     ["slides","Slides","slides.html","slides"],
     ["gallery","Gallery","gallery.html","image"]
   ];
