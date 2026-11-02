@@ -10,7 +10,7 @@ Static site. No build step. Works on Vercel as-is (framework: "Other").
 | `sapm/` | **Term 1 SAPM dashboard** (its own HTML, CSS, JS and data) |
 | `entry/` | **Teacher data entry** (class MPS and least-learned competencies, saved to Supabase) |
 | `results.html` | **Results and Charts**: schoolwide display board (with teacher names) and one chart per assessment for each learning area (blue columns, one color per term), saved as PNG or copied for slides. No sign-in, but hidden until the coordinator turns it on (Coordinator access, Settings). Reads `smea2_public_board`. |
-| `enrollment.html` | Learners per grade level |
+| `enrollment.html` | Learners per grade level, plus a three-year projection (calculated from `data/smea.js` by `assets/projections.js`) |
 | `literacy.html` | CRLA reading profile; PHIL-IRI placeholder |
 | `nutrition.html` | Learners with poor nutrition |
 | `outcomes.html` | LARDOs, dropouts, failures |
