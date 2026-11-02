@@ -256,17 +256,26 @@ function renderArea(){
   // B. least-learned competencies
   const {list:items,groups}=optionsFor(a);
   const lc=el("div",{class:"card"});
-  lc.append(el("h2",{text:a+" · B. Least-Learned Competencies"}),el("p",{class:"hint",text:"Enter three ranked priorities for each assessment. Competencies come from the Budget of Work for Grade "+S.me.grade+" "+a+", Term "+(curPeriod()?.term||"")+". Choose Other if a competency is not on the list."+(items.length?"":" (No Budget of Work list is available for this learning area and term, so use Other.)")}));
+  lc.append(el("h2",{text:a+" · B. Least-Learned Competencies"}),el("p",{class:"hint",text:"Enter three ranked priorities for each assessment. Competencies come from the Budget of Work for Grade "+S.me.grade+" "+a+", Term "+(curPeriod()?.term||"")+". A competency picked for Summative Test 1 is hidden in Summative Test 2, and the other way around; the Term Exam lists all of them. Choose Other if a competency is not on the list."+(items.length?"":" (No Budget of Work list is available for this learning area and term, so use Other.)")}));
   const seg=el("div",{class:"chips"});
   LLC_SECT.forEach(([k,l])=>seg.append(el("button",{class:"chip",type:"button","aria-pressed":String(S.llcTab===k),text:l,onclick:()=>{S.llcTab=k;renderArea();}})));
   lc.append(seg);
   const t=el("table",{class:"llc2"}); t.append(el("thead",{},el("tr",{},...["Rank","Least-learned competency","Intervention","Timeline","Status"].map(x=>el("th",{text:x})))));
   const tb2=el("tbody");
+  // ST1 and ST2 cover different competencies, so a competency already chosen in one is hidden in the other.
+  // The Term Exam covers the whole term, so it always shows the full list.
+  const otherTab = S.llcTab==="st1" ? "st2" : (S.llcTab==="st2" ? "st1" : null);
+  const taken = new Set(otherTab ? rep.llc[otherTab].map(x=>String(x.competency||"").trim()).filter(Boolean) : []);
   rep.llc[S.llcTab].forEach((row,i)=>{
     const dirty=()=>{markDirty();};
+    // keep this row's own saved value visible even if it clashes with the other test (older entries)
+    const own=String(row.competency||"").trim();
+    const hide=(c)=>taken.has(c) && c!==own;
+    const rowItems=items.filter(c=>!hide(c));
+    const rowGroups=new Map(); groups.forEach((cs,g)=>{ const keep=cs.filter(c=>!hide(c)); if(keep.length) rowGroups.set(g,keep); });
     tb2.append(el("tr",{},
       el("td",{},el("span",{class:"rank",text:"Rank "+(i+1)})),
-      el("td",{style:"min-width:260px"},pickBox(row.competency,row._o.c,items,groups,"Select competency",ro,(v,o)=>{row.competency=v;row._o.c=o;dirty();})),
+      el("td",{style:"min-width:260px"},pickBox(row.competency,row._o.c,rowItems,rowGroups,"Select competency",ro,(v,o)=>{row.competency=v;row._o.c=o;dirty();})),
       el("td",{style:"min-width:200px"},pickBox(row.intervention,row._o.i,INTERVENTIONS,null,"Select intervention",ro,(v,o)=>{row.intervention=v;row._o.i=o;dirty();})),
       el("td",{},(()=>{const x=el("input",{type:"text",maxlength:"100",value:row.timeline,placeholder:"e.g. Nov 3–14",disabled:ro,"aria-label":"Timeline"}); x.oninput=()=>{row.timeline=x.value;dirty();}; return x;})()),
       el("td",{style:"min-width:150px"},pickBox(row.status,row._o.s,STATUSES,null,"Select status",ro,(v,o)=>{row.status=v;row._o.s=o;dirty();}))));
